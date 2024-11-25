@@ -160,16 +160,37 @@ audio.addEventListener('timeupdate', () => {
   progressBar.style.width = progress + '%';
   currentTimeDisplay.textContent = formatTime(audio.currentTime);
 });
-
-document.getElementById('showSongsButton').addEventListener('click', () => {
-  const modal = document.getElementById('info-popup');
-  const songList = document.getElementById('songList');
-  songList.innerHTML = songs.map(song => `<li>${song.title} by ${song.channel}</li>`).join('');
-  modal.style.display = 'flex';
+progressContainer.addEventListener('click', (e) => {
+const rect = progressContainer.getBoundingClientRect();  
+const clickX = e.clientX - rect.left;
+const width = rect.width;  
+const duration = audio.duration;
+audio.currentTime = (clickX / width) * duration;
 });
-
-document.getElementById('closeModalButton').addEventListener('click', () => {
-  document.getElementById('info-popup').style.display = 'none';
+loadSong(currentSongIndex);
+const showSongsButton = document.getElementById('showSongsButton');
+const songModal = document.getElementById('info-popup');
+const closeModalButton = document.getElementById('closeModalButton');
+const songList = document.getElementById('songList');
+function displaySongList() {
+songList.innerHTML = '';
+songs.forEach((song, index) => {
+const listItem = document.createElement('li');
+listItem.className = 'p-2 border-b last:border-b-0 border-gray-200 text-gray-800 cursor-pointer hover:bg-gray-100 rounded-lg';
+listItem.textContent = `${index + 1}. ${song.title} - ${song.channel}`;
+listItem.addEventListener('click', () => {
+loadSong(index);
+songModal.classList.add('hidden');
+});
+songList.appendChild(listItem);
+});
+}
+showSongsButton.addEventListener('click', () => {
+displaySongList();
+songModal.classList.remove('hidden');
+});
+closeModalButton.addEventListener('click', () => {
+songModal.classList.add('hidden'); // Pastikan class hidden ditambahkan kembali
 });
 
 </script>
