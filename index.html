@@ -10,7 +10,7 @@
 <link rel="icon" href="./sp_favicon.png" type="image/png">
 <meta property="og:title" content="Playlist - SatzzDev" />
 <meta property="og:description" content="Nikmati musik favorit Satzz dengan kontrol audio yang mudah digunakan. Temukan playlist terbaik dan nikmati pengalaman mendengarkan yang menyenangkan!" />
-<meta property="og:image" content="logo.webp" />
+<meta property="og:image" content="https://i.pinimg.com/736x/b3/da/88/b3da889682844312e3077d4a454b12f5.jpg" />
 <meta property="og:url" content="https://SatzzDev.github.io/playlist" />
 <meta property="og:type" content="website" />  
 <style>
@@ -29,12 +29,16 @@ body {
   justify-content: center;
   align-items: center;
   margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  flex-direction: column;
+}
+
+footer {
+  margin-top: auto; 
 }
 </style>
 </head>
 <body class="text-white">
-<div class="bg-gray-900 bg-opacity-90 p-8 rounded-lg shadow-2xl w-96">
+<div class="bg-gray-900 bg-opacity-90 p-8 rounded-lg shadow-2xl w-full max-w-sm h-auto">
   <img id="albumImage" src="https://telegra.ph/file/2acfcad8d39e49d95addd.jpg" alt="Song Cover" class="w-64 h-64 mx-auto rounded-lg shadow-xl mb-6">
   <h2 id="songTitle" class="text-2xl font-bold text-center mb-2 text-blue-400">Unknown</h2>
   <p id="channelName" class="text-center text-gray-400 mb-6">Unknown</p>
@@ -57,10 +61,35 @@ body {
       <span id="currentTime">0:00</span>
       <span id="duration">3:53</span>
     </div>
+
   </div>
-  <button id="showSongsButton" class="w-full mt-6 py-2 px-4 bg-blue-500 hover:bg-blue-600 rounded-lg text-white font-semibold">
+<!-- Button to show lyrics modal -->
+<button id="showLyricsButton" class="small mt-6 py-2 px-4 bg-yellow-500 hover:bg-yellow-600 rounded-lg text-white font-semibold">
+  <i class="fas fa-file-alt mr-2"></i>View Lyrics
+</button>
+
+
+<button id="showSongsButton" class="w-full mt-6 py-2 px-4 bg-blue-500 hover:bg-blue-600 rounded-lg text-white font-semibold">
     <i class="fas fa-list mr-2"></i>Song List
   </button>
+</div>
+
+<!-- Footer Section -->
+<footer class="bg-gray-900 bg-opacity-90 w-full py-4 text-center text-gray-400 mt-6">
+  <p>&copy; 2024 SatzzDev. All rights reserved.</p>
+</footer>
+
+<!-- Lyrics Modal -->
+<div id="lyricsModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50">
+  <div class="bg-white p-6 rounded-lg w-96 shadow-2xl transform transition-all modal-enter">
+    <h3 class="text-xl font-bold mb-4 text-gray-700"><i class="fas fa-music mr-2"></i>Lyrics</h3>
+    <div id="lyricsContainer" class="text-gray-700 max-h-64 overflow-y-auto"> <!-- Tambahkan div pembungkus -->
+      <p id="lyricsText"></p>
+    </div>
+    <button id="closeModalButton" class="mt-4 w-full py-2 bg-red-500 hover:bg-red-600 rounded-lg text-white">
+      Close
+    </button>
+  </div>
 </div>
 <div id="info-popup" class="hidden fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50">
   <div class="bg-white p-6 rounded-lg w-96 shadow-2xl transform transition-all modal-enter">
@@ -97,12 +126,40 @@ const channelName = document.getElementById('channelName');
 const playIcon = document.getElementById('playIcon');
 let currentSongIndex = 0;
 
+// Lyrics Modal Elements
+const showLyricsButton = document.getElementById('showLyricsButton');
+const lyricsModal = document.getElementById('lyricsModal');
+const closeLyricsButton = document.querySelector('#lyricsModal button'); // Adjusted selector
+const lyricsText = document.getElementById('lyricsText');
+
+// Song List Modal Elements
+const showSongsButton = document.getElementById('showSongsButton');
+const songModal = document.getElementById('info-popup');
+const closeSongsButton = document.querySelector('#info-popup button'); // Adjusted selector
+const songList = document.getElementById('songList');
+
 function loadSong(index) {
   const song = songs[index];
   audio.src = song.audio_url;
   albumImage.src = song.image;
   songTitle.textContent = song.title;
   channelName.textContent = song.channel;
+  
+  // Fetch lyrics from the API
+  fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(song.channel)}/${encodeURIComponent(song.title)}`)
+    .then(response => {
+      if (!response.ok) throw new Error('Lyrics not found');
+      return response.json();
+    })
+    .then(data => {
+    const formattedLyrics = data.lyrics.replaceAll('\n', '<br>');  // Ganti \n dengan <br>
+    lyricsText.innerHTML = formattedLyrics || "Loading Lyrics...";  // Tampilkan lirik dengan HTML
+  })
+    .catch(error => {
+      console.error("Error fetching lyrics:", error);
+      lyricsText.textContent = "Lyrics not available";
+    });
+
   audio.addEventListener('loadedmetadata', () => {
     durationDisplay.textContent = formatTime(audio.duration);
   });
@@ -113,44 +170,45 @@ function loadSong(index) {
     audio.play();
     playIcon.classList.remove('fa-spinner');
     playIcon.classList.add('fa-pause');
-  }); 
+  });
 }
 
 function formatTime(seconds) {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs < 10 ? '0' + secs : secs}`;
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
 }
 
+
+// Play/Pause Toggle
 playButton.addEventListener('click', () => {
   if (audio.paused) {
     audio.play();
-    playIcon.classList.remove('fa-play');
-    playIcon.classList.add('fa-pause');
+    playIcon.classList.replace('fa-play', 'fa-pause');
   } else {
     audio.pause();
-    playIcon.classList.remove('fa-pause');
-    playIcon.classList.add('fa-play');
+    playIcon.classList.replace('fa-pause', 'fa-play');
   }
 });
 
+// Next and Previous
 prevButton.addEventListener('click', () => {
-  if (currentSongIndex > 0) {
-    currentSongIndex--;
-    loadSong(currentSongIndex);
-  }
+  currentSongIndex = (currentSongIndex === 0) ? songs.length - 1 : currentSongIndex - 1;
+  loadSong(currentSongIndex);
 });
 
 nextButton.addEventListener('click', () => {
-  if (currentSongIndex < songs.length - 1) {
-    currentSongIndex++;
-    loadSong(currentSongIndex);
-  }
+  currentSongIndex = (currentSongIndex === songs.length - 1) ? 0 : currentSongIndex + 1;
+  loadSong(currentSongIndex);
 });
 
 audio.addEventListener('ended', () => {
   if (currentSongIndex < songs.length - 1) {
     currentSongIndex++;
+    loadSong(currentSongIndex);
+  } else {
+    // Go back to the first song when the last one ends
+    currentSongIndex = 0;
     loadSong(currentSongIndex);
   }
 });
@@ -167,32 +225,52 @@ const width = rect.width;
 const duration = audio.duration;
 audio.currentTime = (clickX / width) * duration;
 });
-//loadSong(currentSongIndex);
-const showSongsButton = document.getElementById('showSongsButton');
-const songModal = document.getElementById('info-popup');
-const closeModalButton = document.getElementById('closeModalButton');
-const songList = document.getElementById('songList');
+
+// Show Lyrics Modal
+showLyricsButton.addEventListener('click', () => {
+  const song = songs[currentSongIndex];
+  lyricsText.textContent = song.lyrics || "No lyrics available";
+  lyricsModal.classList.remove('hidden');
+});
+
+// Close Lyrics Modal
+closeLyricsButton.addEventListener('click', () => {
+  lyricsModal.classList.add('hidden');
+});
+
+// Show Song List Modal
 function displaySongList() {
-songList.innerHTML = '';
-songs.forEach((song, index) => {
-const listItem = document.createElement('li');
-listItem.className = 'p-2 border-b last:border-b-0 border-gray-200 text-gray-800 cursor-pointer hover:bg-gray-100 rounded-lg';
-listItem.textContent = `${index + 1}. ${song.title} - ${song.channel}`;
-listItem.addEventListener('click', () => {
-loadSong(index);
-songModal.classList.add('hidden');
-});
-songList.appendChild(listItem);
-});
+  songList.innerHTML = '';
+  songs.forEach((song, index) => {
+    const listItem = document.createElement('li');
+    listItem.className = 'p-2 border-b last:border-b-0 border-gray-200 text-gray-800 cursor-pointer hover:bg-gray-100 rounded-lg';
+    listItem.textContent = `${index + 1}. ${song.title} - ${song.channel}`;
+    listItem.addEventListener('click', () => {
+      loadSong(index);
+      songModal.classList.add('hidden');
+    });
+    songList.appendChild(listItem);
+  });
 }
+
 showSongsButton.addEventListener('click', () => {
-displaySongList();
-songModal.classList.remove('hidden');
+  displaySongList();
+  songModal.classList.remove('hidden');
 });
-closeModalButton.addEventListener('click', () => {
-songModal.classList.add('hidden'); // Pastikan class hidden ditambahkan kembali
+
+// Close Song List Modal
+closeSongsButton.addEventListener('click', () => {
+  songModal.classList.add('hidden');
+});
+
+// Progress Bar Handling
+progressContainer.addEventListener('click', (e) => {
+  const rect = progressContainer.getBoundingClientRect();  
+  const clickX = e.clientX - rect.left;
+  audio.currentTime = (clickX / rect.width) * audio.duration;
 });
 
 </script>
+
 </body>
 </html>
