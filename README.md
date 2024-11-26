@@ -13,7 +13,7 @@ This project is a simple music player that plays songs from a playlist, displays
 
 ## Demo
 
-To preview the music player and its features, clone the repository and run the project locally.
+[DEMO](https://satzzdev.github.io/playlist)
 
 ## Installation
 
