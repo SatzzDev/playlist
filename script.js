@@ -162,12 +162,23 @@ function displaySongList() {
 songList.innerHTML = '';
 songs.forEach((song, index) => {
 const listItem = document.createElement('li');
-listItem.className = 'p-2 border-b last:border-b-0 border-gray-200 text-gray-800 cursor-pointer hover:bg-gray-100 rounded-lg';
-listItem.textContent = `${index + 1}. ${song.title} - ${song.channel}`;
+listItem.className = 'flex items-center p-2 border-b last:border-b-0 border-gray-200 text-gray-800 cursor-pointer hover:bg-gray-100 rounded-lg';
+const img = document.createElement('img');
+img.src = song.image; 
+img.alt = song.title;
+img.className = 'w-12 h-12 object-cover rounded-md mr-4'; 
+const textContainer = document.createElement('div');
+textContainer.className = 'flex flex-col';
+textContainer.innerHTML = `
+<span class="font-semibold">${song.title}</span>
+<span class="text-sm text-gray-500">${song.channel}</span>
+`;
 listItem.addEventListener('click', () => {
 loadSong(index);
 songModal.classList.add('hidden');
 });
+listItem.appendChild(img);           
+listItem.appendChild(textContainer); 
 songList.appendChild(listItem);
 });
 }
