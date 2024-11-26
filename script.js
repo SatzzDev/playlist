@@ -4,7 +4,7 @@ loadingOverlay.innerHTML = '<div class="spinner"></div>';
 document.body.appendChild(loadingOverlay);
 
 let songs = []; 
-fetch('https://raw.githubusercontent.com/SatzzDev/playlist/refs/heads/master/playlist.json') 
+fetch('https://raw.githubusercontent.com/SatzzDev/Datas/refs/heads/main/playlist.json') 
 .then(response => response.json())
 .then(data => {
 songs = data; 
