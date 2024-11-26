@@ -139,6 +139,7 @@ currentSongIndex = (currentSongIndex === songs.length - 1) ? 0 : currentSongInde
 loadSong(currentSongIndex);
 });
 audio.addEventListener('ended', () => {
+  playIcon.classList.replace('fa-pause', 'fa-spinner');
 if (currentSongIndex < songs.length - 1) {
 currentSongIndex++;
 loadSong(currentSongIndex);
@@ -174,6 +175,7 @@ textContainer.innerHTML = `
 <span class="text-sm text-gray-500">${song.channel}</span>
 `;
 listItem.addEventListener('click', () => {
+playIcon.classList.replace('fa-pause', 'fa-spinner');
 loadSong(index);
 songModal.classList.add('hidden');
 });
