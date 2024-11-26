@@ -4,7 +4,7 @@ loadingOverlay.innerHTML = '<div class="spinner"></div>';
 document.body.appendChild(loadingOverlay);
 
 let songs = []; 
-fetch('/playlist.json') 
+fetch('https://satzzdev.github.io/playlist/playlist.json') 
 .then(response => response.json())
 .then(data => {
 songs = data; 
@@ -12,7 +12,6 @@ loadSong(0);
 loadingOverlay.remove();
 })
 .catch(error => console.error("Error fetching the playlist:", error));
-
 const audio = new Audio();
 const playButton = document.getElementById('playButton');
 const prevButton = document.getElementById('prevButton');
@@ -26,17 +25,14 @@ const songTitle = document.getElementById('songTitle');
 const channelName = document.getElementById('channelName');
 const playIcon = document.getElementById('playIcon');
 let currentSongIndex = 0;
-
-let currentLyrics = []; // Array to store lyrics with timestamps
+let currentLyrics = []; 
 const lyricsContent = document.getElementById('lyrics');
 const showSongsButton = document.getElementById('showSongsButton');
 const songModal = document.getElementById('info-popup');
 const closeSongsButton = document.querySelector('#info-popup button'); 
 const songList = document.getElementById('songList');
-// Function to fetch and parse LRC file
 function fetchLrcFile(index) {
 const song = songs[index];
-// Construct the LRC file URL based on the song's channel and title
 const url = `https://www.lyricsify.com/lyrics/${song.channel.toLowerCase().replace(/ /g, "-")}/${song.title.replace(/ /g, "-")}`;
 fetch(url)
 .then(response => response.text())
@@ -62,7 +58,6 @@ console.error("No song divs found under .main-page");
 })
 .catch(error => console.error("Error fetching or processing the LRC file:", error));
 }
-// Function to parse LRC format
 function parseLrc(lrc) {
 const lines = lrc.split('\n');
 return lines.map(line => {
@@ -79,64 +74,48 @@ return null;
 }).filter(item => item !== null);
 }
 
-// Update lyrics based on audio current time
 function updateLyrics() {
-  const currentTime = audio.currentTime;
-  let displayedLyric = '';
-
-  // Find the lyric line that corresponds to the current time
-  for (let i = 0; i < currentLyrics.length; i++) {
-    if (currentTime >= currentLyrics[i].time) {
-      displayedLyric = currentLyrics[i].text;
-    } else {
-      break;
-    }
-  }
-
-  // Update the lyrics text content
-  const lyricsContent = document.getElementById('lyrics');
-  lyricsContent.textContent = displayedLyric;
-
-  // Trigger fade-up animation by adding/removing classes
-  lyricsContent.classList.remove('opacity-0', 'translate-y-5'); // Reset animation classes
-  void lyricsContent.offsetWidth; // Trigger reflow to restart the animation
-  lyricsContent.classList.add('opacity-100', 'translate-y-0'); // Add animation classes
+const currentTime = audio.currentTime;
+let displayedLyric = '';
+for (let i = 0; i < currentLyrics.length; i++) {
+if (currentTime >= currentLyrics[i].time) {
+displayedLyric = currentLyrics[i].text;
+} else {
+break;
 }
-
-
-// Load the song and its corresponding LRC file
+}
+const lyricsContent = document.getElementById('lyrics');
+lyricsContent.textContent = displayedLyric;
+lyricsContent.classList.remove('opacity-0', 'translate-y-5'); 
+void lyricsContent.offsetWidth; 
+lyricsContent.classList.add('opacity-100', 'translate-y-0'); 
+}
 function loadSong(index) {
 const song = songs[index];
 audio.src = song.audio_url;
 albumImage.src = song.image;
 songTitle.textContent = song.title;
 channelName.textContent = song.channel;
-
-fetchLrcFile(index); // Fetch LRC for the song
-
+fetchLrcFile(index); 
 audio.addEventListener('loadedmetadata', () => {
 durationDisplay.textContent = formatTime(audio.duration);
 });
-
 audio.load();
 playIcon.classList.add('animate-spin'); 
 audio.addEventListener('canplay', async() => {
-  playIcon.classList.remove('animate-spin')
+playIcon.classList.remove('animate-spin')
 await audio.play().catch(_ => {
 playIcon.classList.remove('animate-spin')
-  playIcon.classList.replace('fa-spinner', 'fa-play');
+playIcon.classList.replace('fa-spinner', 'fa-play');
 });
 playIcon.classList.replace('fa-spinner', 'fa-pause');
 });
 }
-
 function formatTime(seconds) {
 const minutes = Math.floor(seconds / 60);
 const remainingSeconds = Math.floor(seconds % 60);
 return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
 }
-
-// Play/Pause Toggle
 playButton.addEventListener('click', () => {
 if (audio.paused) {
 audio.play();
@@ -146,24 +125,19 @@ audio.pause();
 playIcon.classList.replace('fa-pause', 'fa-play');
 }
 });
-
-// Next and Previous Song Navigation
 prevButton.addEventListener('click', () => {
-  playIcon.classList.replace('fa-pause', 'fa-spinner')
-  playIcon.classList.replace('fa-play', 'fa-spinner')
+playIcon.classList.replace('fa-pause', 'fa-spinner')
+playIcon.classList.replace('fa-play', 'fa-spinner')
 currentSongIndex = (currentSongIndex === 0) ? songs.length - 1 : currentSongIndex - 1;
 loadSong(currentSongIndex);
 });
 
 nextButton.addEventListener('click', () => {
-//playIcon.classList.remove('animate-spin')
 playIcon.classList.replace('fa-pause', 'fa-spinner')
 playIcon.classList.replace('fa-play', 'fa-spinner')
 currentSongIndex = (currentSongIndex === songs.length - 1) ? 0 : currentSongIndex + 1;
 loadSong(currentSongIndex);
 });
-
-// Handle end of song
 audio.addEventListener('ended', () => {
 if (currentSongIndex < songs.length - 1) {
 currentSongIndex++;
@@ -173,22 +147,17 @@ currentSongIndex = 0;
 loadSong(currentSongIndex);
 }
 });
-
-// Update lyrics while song plays
 audio.addEventListener('timeupdate', () => {
 updateLyrics();
 const progress = (audio.currentTime / audio.duration) * 100;
 progressBar.style.width = progress + '%';
 currentTimeDisplay.textContent = formatTime(audio.currentTime);
 });
-
-// Handle progress bar click
 progressContainer.addEventListener('click', (e) => {
 const rect = progressContainer.getBoundingClientRect();
 const clickX = e.clientX - rect.left;
 audio.currentTime = (clickX / rect.width) * audio.duration;
 });
-// Show Song List Modal
 function displaySongList() {
 songList.innerHTML = '';
 songs.forEach((song, index) => {
@@ -202,13 +171,10 @@ songModal.classList.add('hidden');
 songList.appendChild(listItem);
 });
 }
-
 showSongsButton.addEventListener('click', () => {
 displaySongList();
 songModal.classList.remove('hidden');
 });
-
-// Close Song List Modal
 closeSongsButton.addEventListener('click', () => {
 songModal.classList.add('hidden');
 });
