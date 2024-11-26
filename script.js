@@ -79,29 +79,48 @@ return null;
 }).filter(item => item !== null);
 }
 
-// Update lyrics based on audio current time
 function updateLyrics() {
   const currentTime = audio.currentTime;
-  let displayedLyric = '';
+  let activeIndex = -1;
 
-  // Find the lyric line that corresponds to the current time
+  // Cari lirik aktif berdasarkan waktu
   for (let i = 0; i < currentLyrics.length; i++) {
     if (currentTime >= currentLyrics[i].time) {
-      displayedLyric = currentLyrics[i].text;
+      activeIndex = i;
     } else {
       break;
     }
   }
 
-  // Update the lyrics text content
-  const lyricsContent = document.getElementById('lyrics');
-  lyricsContent.textContent = displayedLyric;
+  if (activeIndex !== -1) {
+    const lyricsContainer = document.getElementById('lyricsContainer');
+    lyricsContainer.innerHTML = ''; // Kosongkan container
 
-  // Trigger fade-up animation by adding/removing classes
-  lyricsContent.classList.remove('opacity-0', 'translate-y-5'); // Reset animation classes
-  void lyricsContent.offsetWidth; // Trigger reflow to restart the animation
-  lyricsContent.classList.add('opacity-100', 'translate-y-0'); // Add animation classes
+    currentLyrics.forEach((line, index) => {
+      const lyricDiv = document.createElement('div');
+      lyricDiv.className = 'lyric-line';
+      lyricDiv.textContent = line.text;
+
+      if (index === activeIndex) {
+        lyricDiv.classList.add('active');
+      }
+
+      lyricsContainer.appendChild(lyricDiv);
+    });
+
+    // Scroll otomatis ke baris lirik aktif dengan smooth scroll
+    const activeLyric = document.querySelector('.lyric-line.active');
+    if (activeLyric) {
+      const containerHeight = lyricsContainer.clientHeight;
+      const activeTop = activeLyric.offsetTop - containerHeight / 2 + activeLyric.clientHeight / 2;
+      lyricsContainer.scrollTo({
+        top: activeTop,
+        behavior: 'smooth' // Smooth scrolling
+      });
+    }
+  }
 }
+
 
 
 // Load the song and its corresponding LRC file
