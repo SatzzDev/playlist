@@ -1,63 +1,157 @@
-const loadingOverlay = document.createElement('div');
-loadingOverlay.className = 'fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center text-white';
-loadingOverlay.innerHTML = '<div class="spinner"></div>';
-document.body.appendChild(loadingOverlay);
+// Dark Mode Toggle Based on User Preference
+let theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
-let songs = []; 
-fetch('https://raw.githubusercontent.com/SatzzDev/Datas/refs/heads/main/playlist.json') 
+if (theme == 'dark') {
+document.documentElement.classList.add('dark');
+}
+
+document.getElementById('dark-mode-toggle').addEventListener('click', function() {
+document.documentElement.classList.toggle('dark');
+});
+
+// Fetching Playlist from JSON URL
+let songs = [];
+let now_playing = -1;  // Initialize 'now_playing' to track the current song index
+fetch('https://raw.githubusercontent.com/SatzzDev/Datas/refs/heads/main/playlist.json')
 .then(response => response.json())
 .then(data => {
-songs = data; 
-loadSong(0); 
-loadingOverlay.remove();
+songs = data;
+Amplitude.init({
+"bindings": {
+37: 'prev', // Left Arrow: Previous song
+39: 'next', // Right Arrow: Next song
+32: 'play_pause' // Spacebar: Play/Pause
+},
+songs: songs.map(song => ({
+name: song.title,
+artist: song.channel,
+url: song.audio_url,
+cover_art_url: song.image
+}))
+});
+loadSong(0); // Load the first song on startup
 })
 .catch(error => console.error("Error fetching the playlist:", error));
-const audio = new Audio();
-const playButton = document.getElementById('playButton');
-const prevButton = document.getElementById('prevButton');
-const nextButton = document.getElementById('nextButton');
-const progressBar = document.getElementById('progressBar');
-const progressContainer = document.querySelector('.w-full.bg-gray-600');
-const currentTimeDisplay = document.getElementById('currentTime');
-const durationDisplay = document.getElementById('duration');
-const albumImage = document.getElementById('albumImage');
-const songTitle = document.getElementById('songTitle');
-const channelName = document.getElementById('channelName');
-const playIcon = document.getElementById('playIcon');
-let currentSongIndex = 0;
-let currentLyrics = []; 
-const lyricsContent = document.getElementById('lyrics');
+
+// DOM Elements for Modal and Lyrics
+const nextButton = document.getElementById('nextButton')
+const prevButton = document.getElementById('prevButton')
 const showSongsButton = document.getElementById('showSongsButton');
 const songModal = document.getElementById('info-popup');
-const closeSongsButton = document.querySelector('#info-popup button'); 
+const closeSongsButton = document.getElementById('closeSongsButton');
+const lyricsContent = document.getElementById('lyrics');
+let currentLyrics = [];
+let currentLine = 0;
+
+function displaySongList() {
 const songList = document.getElementById('songList');
+songList.innerHTML = ''; // Clear previous song list
+
+// Add songs dynamically
+songs.forEach((song, index) => {
+const li = document.createElement('li');
+li.classList.add('flex', 'items-center');
+
+// Add song cover image
+const img = document.createElement('img');
+img.src = song.image || 'https://via.placeholder.com/40'; // Default placeholder if no cover is provided
+img.alt = 'Song Cover';
+
+// Add song title
+const span = document.createElement('span');
+span.textContent = song.title;
+li.addEventListener('click', () => {
+Amplitude.playSongAtIndex(index);
+let u = Amplitude.getActiveIndex()
+fetchLrcFile(u)
+closeModal()
+});
+li.appendChild(img);
+li.appendChild(span);
+songList.appendChild(li);
+});
+
+// Show the modal with a fade-in effect
+document.getElementById('info-popup').classList.add('show');
+}
+
+// Closing the Modal
+function closeModal() {
+document.getElementById('info-popup').classList.remove('show');
+}
+
+// Show Songs Button Event
+showSongsButton.addEventListener('click', async () => {
+displaySongList();
+});
+
+// Close Modal Button Event
+closeSongsButton.addEventListener('click', () => {
+closeModal();
+});
+
+// Close Modal by Clicking Outside of It
+songModal.addEventListener('click', (e) => {
+if (e.target === songModal) {
+closeModal();
+}
+});
+function align() {
+const highlightedElement = $('.highlighted');
+
+// Check if the highlighted element exists
+if (highlightedElement.length > 0) {
+const highlightedHeight = highlightedElement.height();
+const contentHeight = $('.content').height();
+const offsetTop = highlightedElement.offset().top - highlightedElement.parent().offset().top;
+const scrollTop = offsetTop + highlightedHeight / 2 - contentHeight / 2;
+$('.content').animate({ scrollTop: scrollTop + 'px' }, { easing: 'swing', duration: 250 });
+}
+}
+
+// Handling Resize for Lyrics Alignment
+let lyricHeight = $('.lyrics').height();
+$(window).on('resize', function() {
+if ($('.lyrics').height() != lyricHeight) {
+lyricHeight = $('.lyrics').height();
+align();
+}
+});
+
+// Generating Lyrics HTML
+function generate() {
+let html = '';
+for (let i = 0; i < currentLyrics.length; i++) {
+html += `<div ${i === currentLine ? 'class="highlighted"' : ''}>${currentLyrics[i].text || '•'}</div>`;
+}
+$('.lyrics').html(html);
+align();
+}
+
+// Fetching and Parsing LRC Lyrics from API
 function fetchLrcFile(index) {
 const song = songs[index];
 const url = `https://www.lyricsify.com/lyrics/${song.channel.toLowerCase().replace(/ /g, "-")}/${song.title.replace(/ /g, "-")}`;
+
 fetch(url)
 .then(response => response.text())
 .then(data => {
 const parser = new DOMParser();
 const doc = parser.parseFromString(data, 'text/html');
-const mainPageDiv = doc.querySelector('.main-page');
-const songDivs = mainPageDiv.querySelectorAll('div[id^="lyrics_"]');
-if (songDivs.length > 0) {
-const firstSongDiv = songDivs[0];  
-const songId = firstSongDiv.id.split('lyrics_')[1]; 
-console.log(`Found song with ID: ${songId}`);
-const lyricsDiv = doc.querySelector(`#lyrics_${songId}_details`);
+const lyricsDiv = doc.querySelector('.main-page div[id^="lyrics_"]');
+
 if (lyricsDiv) {
 const lyricsText = lyricsDiv.textContent || lyricsDiv.innerText;
 currentLyrics = parseLrc(lyricsText);
+generate(); // Update lyrics display
 } else {
-console.error("Lyrics div not found for song ID:", songId);
-}
-} else {
-console.error("No song divs found under .main-page");
+console.error("Lyrics not found for song:", song.title);
 }
 })
-.catch(error => console.error("Error fetching or processing the LRC file:", error));
+.catch(error => console.error("Error fetching lyrics:", error));
 }
+
+// Parsing LRC Format
 function parseLrc(lrc) {
 const lines = lrc.split('\n');
 return lines.map(line => {
@@ -74,9 +168,12 @@ return null;
 }).filter(item => item !== null);
 }
 
+// Updating lyrics based on current song's time
 function updateLyrics() {
-const currentTime = audio.currentTime;
+const currentTime = Amplitude.getSongPlayedSeconds();  // Getting current song play time
 let displayedLyric = '';
+
+// Showing lyrics matching the song's current time
 for (let i = 0; i < currentLyrics.length; i++) {
 if (currentTime >= currentLyrics[i].time) {
 displayedLyric = currentLyrics[i].text;
@@ -84,110 +181,32 @@ displayedLyric = currentLyrics[i].text;
 break;
 }
 }
-const lyricsContent = document.getElementById('lyrics');
-lyricsContent.textContent = displayedLyric;
-lyricsContent.classList.remove('opacity-0', 'translate-y-5'); 
-void lyricsContent.offsetWidth; 
-lyricsContent.classList.add('opacity-100', 'translate-y-0'); 
+
+// Highlighting the current lyric line
+const pastLyrics = currentLyrics.filter(item => item.time < currentTime);
+if (currentLyrics[pastLyrics.length] !== currentLine) {
+currentLine = currentLyrics[pastLyrics.length];
+$('.lyrics div').removeClass('highlighted');
+$(`.lyrics div:nth-child(${pastLyrics.length})`).addClass('highlighted'); // Highlighting current lyric
+align(); // Adjust the lyrics view to stay centered
 }
+}
+
+// Loading Song by Index (also triggers lyrics fetching)
 function loadSong(index) {
-const song = songs[index];
-audio.src = song.audio_url;
-albumImage.src = song.image;
-songTitle.textContent = song.title;
-channelName.textContent = song.channel;
-fetchLrcFile(index); 
-audio.addEventListener('loadedmetadata', () => {
-durationDisplay.textContent = formatTime(audio.duration);
-});
-audio.load();
-playIcon.classList.add('animate-spin'); 
-audio.addEventListener('canplay', async() => {
-playIcon.classList.remove('animate-spin')
-await audio.play().catch(_ => {
-playIcon.classList.remove('animate-spin')
-playIcon.classList.replace('fa-spinner', 'fa-play');
-});
-playIcon.classList.replace('fa-spinner', 'fa-pause');
-});
+let u = Amplitude.getActiveIndex()
+fetchLrcFile(u)  // Fetch lyrics when song changes
 }
-function formatTime(seconds) {
-const minutes = Math.floor(seconds / 60);
-const remainingSeconds = Math.floor(seconds % 60);
-return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
-}
-playButton.addEventListener('click', () => {
-if (audio.paused) {
-audio.play();
-playIcon.classList.replace('fa-play', 'fa-pause');
-} else {
-audio.pause();
-playIcon.classList.replace('fa-pause', 'fa-play');
-}
-});
-prevButton.addEventListener('click', () => {
-playIcon.classList.replace('fa-pause', 'fa-spinner')
-playIcon.classList.replace('fa-play', 'fa-spinner')
-currentSongIndex = (currentSongIndex === 0) ? songs.length - 1 : currentSongIndex - 1;
-loadSong(currentSongIndex);
-});
+
 
 nextButton.addEventListener('click', () => {
-playIcon.classList.replace('fa-pause', 'fa-spinner')
-playIcon.classList.replace('fa-play', 'fa-spinner')
-currentSongIndex = (currentSongIndex === songs.length - 1) ? 0 : currentSongIndex + 1;
-loadSong(currentSongIndex);
-});
-audio.addEventListener('ended', () => {
-  playIcon.classList.replace('fa-pause', 'fa-spinner');
-if (currentSongIndex < songs.length - 1) {
-currentSongIndex++;
-loadSong(currentSongIndex);
-} else {
-currentSongIndex = 0;
-loadSong(currentSongIndex);
-}
-});
-audio.addEventListener('timeupdate', () => {
-updateLyrics();
-const progress = (audio.currentTime / audio.duration) * 100;
-progressBar.style.width = progress + '%';
-currentTimeDisplay.textContent = formatTime(audio.currentTime);
-});
-progressContainer.addEventListener('click', (e) => {
-const rect = progressContainer.getBoundingClientRect();
-const clickX = e.clientX - rect.left;
-audio.currentTime = (clickX / rect.width) * audio.duration;
-});
-function displaySongList() {
-songList.innerHTML = '';
-songs.forEach((song, index) => {
-const listItem = document.createElement('li');
-listItem.className = 'flex items-center p-2 border-b last:border-b-0 border-gray-200 text-gray-800 cursor-pointer hover:bg-gray-100 rounded-lg';
-const img = document.createElement('img');
-img.src = song.image; 
-img.alt = song.title;
-img.className = 'w-12 h-12 object-cover rounded-md mr-4'; 
-const textContainer = document.createElement('div');
-textContainer.className = 'flex flex-col';
-textContainer.innerHTML = `
-<span class="font-semibold">${song.title}</span>
-<span class="text-sm text-gray-500">${song.channel}</span>
-`;
-listItem.addEventListener('click', () => {
-playIcon.classList.replace('fa-pause', 'fa-spinner');
-loadSong(index);
-songModal.classList.add('hidden');
-});
-listItem.appendChild(img);           
-listItem.appendChild(textContainer); 
-songList.appendChild(listItem);
-});
-}
-showSongsButton.addEventListener('click', () => {
-displaySongList();
-songModal.classList.remove('hidden');
-});
-closeSongsButton.addEventListener('click', () => {
-songModal.classList.add('hidden');
-});
+Amplitude.next()
+let u = Amplitude.getActiveIndex()
+fetchLrcFile(u)
+})
+prevButton.addEventListener('click', () => {
+let u = Amplitude.getActiveIndex()
+fetchLrcFile(u)
+})
+// Interval for Lyrics Update
+setInterval(updateLyrics, 100);
