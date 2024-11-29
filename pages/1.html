@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+<meta charset="UTF-8">
+<title>Mode 1</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+<link rel='stylesheet' href='https://use.fontawesome.com/releases/v5.0.7/css/all.css'><link rel="stylesheet" href="../style.css">
+<link rel="shortcut icon" href="../favicon.png" />
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<div class="app" id="app">
+<div class="tracks" :class="{isactive: isPlaylistActive}">
+<ul class="tracks__list">
+<li class="tracks__item" v-for="(item,index) in musicPlaylist" :class="{isactive: isCurrentSong(index)}">
+<div class="tracks__info">
+<h3 class="tracks__info-artist">{{item.artist}}</h3><span class="tracks__info-name">{{ item.title }}</span>
+</div>
+<button class="btn play btn--xs" @click="changeSong(index)" :class="{pause: isCurrentSong(index)}"></button>
+</li>
+</ul>
+</div>
+<div class="row app__head">
+<button class="btn btn--small back"></button>
+<button class="btn btn--small playlist" @click="togglePlaylist" :class="{isactive: isPlaylistActive}"></button>
+</div>
+<div class="row app__body">
+<div class="album">
+<div class="album__img" @load="onImageLoaded" :style="{ backgroundImage: `url(${musicPlaylist[currentSong].image})` }" :class="{isactive: isPlaylistActive}" :key="currentSong" ondragstart="return false"></div>
+<div class="album__info" :class="{isactive: isPlaylistActive}">
+<h3 class="album__info-name" :key="currentSong">{{ musicPlaylist[currentSong].title }}</h3>
+<p class="album__info-track" :key="currentSong">{{ musicPlaylist[currentSong].artist }}</p>
+</div>
+</div>
+<div class="progress" ref="progress" :class="{isactive: isPlaylistActive}">
+<div class="progress__count"><span>{{ currentTime | fancyTimeFormat }}</span><span>{{ trackDuration | fancyTimeFormat }}</span></div>
+<div class="progress__bar">
+<div class="progress__bar-current" :style="{ width: currentProgressBar + '%' }"></div>
+<div class="progress__bar-pin" :style="{ left: currentProgressBar + '%' }"></div>
+</div>
+</div>
+</div>
+<div class="row app__footer" :class="{isactive: isPlaylistActive}">
+<button class="btn prev btn--big" @click="prevSong"></button>
+<button class="btn play btn--big" @click="playAudio" :class="{pause: currentlyPlaying}"></button>
+<button class="btn next btn--big" @click="nextSong"></button>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.js"></script>
+<script>
+var app = new Vue({
+el: "#app",
+data: {
+audio: "",
+imgLoaded: false,
+currentlyPlaying: false,
+currentlyStopped: false,
+currentTime: 0,
+checkingCurrentPositionInTrack: "",
+trackDuration: 0,
+currentProgressBar: 0,
+isPlaylistActive: false,
+currentSong: 0,
+debug: false,
+musicPlaylist: [
+{
+"title": "Rodeo (Remix)",
+"artist": "Lah Pat & Flo Milli",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/Rodeo (Remix).mp3",		"image":"https://i.scdn.co/image/ab67616d0000b27338f05c37e1cc8163594a0687",
+},
+{
+"title": "Genius ft. Sia, Diplo, Labrinth",
+"artist": "LSD",
+"image": "https://raw.githubusercontent.com/muhammederdem/mini-player/master/img/6.jpg",
+"url": "https://raw.githubusercontent.com/muhammederdem/mini-player/master/mp3/6.mp3",
+},
+{
+"title": "2 On (feat. ScHoolboy Q)",
+"artist": "Tinashe & ScHoolboy Q",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/2 On (feat. ScHoolboy Q).mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b27381a584f39cad5c1c6a6e9e50",
+
+},
+{
+"title": "Starboy",
+"artist": "The Weeknd & Daft Punk",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/Starboy.mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b2734718e2b124f79258be7bc452",
+
+},
+{
+"title": "Gata Only",
+"artist": "FloyyMenor & Cris Mj",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/Gata Only.mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b2731d0777b3259d0bd618f4a1f6",
+
+},
+{
+"title": "Popular (with Playboi Carti & Madonna) - Music from the HBO Original Series",
+"artist": "The Weeknd & Playboi Carti & Madonna",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/Popular (with Playboi Carti & Madonna) - Music from the HBO Original Series.mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b2734c8f092adc59b4bf4212389d",
+
+},
+{
+"title": "KU LO SA (with Camila Cabello)",
+"artist": "Oxlade & Camila Cabello",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/KU LO SA (with Camila Cabello).mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b27346f4860442e4e517a55d16bb",
+
+},
+{
+"title": "Drive By",
+"artist": "Eric Bellinger",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/Drive By.mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b27357b5e1c0ec12a19ae3471c80",
+
+},
+{
+"title": "Baby By Me",
+"artist": "50 Cent & Ne-Yo",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/Baby By Me.mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b2735fcaf37050baf451d34570f6",
+
+},
+{
+"title": "ESTE",
+"artist": "El Alfa & Nfasis",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/ESTE.mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b27304a8b7df76ffecbe823ec8ea",
+
+},
+{
+"title": "People",
+"artist": "Libianca",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/People.mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b273fc342f95f117d48dbdde9735",
+
+},
+{
+"title": "Reminder",
+"artist": "The Weeknd",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/Reminder.mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b2734718e2b124f79258be7bc452",
+
+},
+{
+"title": "Terminator (feat. Young Jonn)",
+"artist": "King Promise & Young Jonn",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/Terminator (feat. Young Jonn).mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b27304f11265b22f0cafe87f2d88",
+
+},
+{
+"title": "kompa pasión",
+"artist": "фрози",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/kompa pasión.mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b273fc80bd2433ba9d9e79d0d114",
+
+},
+{
+"title": "Love Me Back (Fayahh Beat)",
+"artist": "Trinidad Cardona & Robinson",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/Love Me Back (Fayahh Beat).mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b273b9b96725f63295f1ac93e964",
+
+},
+{
+"title": "Hey Daddy (Daddy's Home)",
+"artist": "Usher",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/Hey Daddy (Daddy's Home).mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b27386b0c9728ad3ed338eaeea79",
+
+},
+{
+"title": "Renegade",
+"artist": "Aaryan Shah",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/Renegade.mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b273a21b22bea3992eb630bba71a",
+
+},
+{
+"title": "One Of The Girls (with JENNIE, Lily Rose Depp)",
+"artist": "The Weeknd & JENNIE & Lily-Rose Depp",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/One Of The Girls (with JENNIE, Lily Rose Depp).mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b273b0dd6a5cd1dec96c4119c262",
+
+},
+{
+"title": "Collide (Sped Up Remix)",
+"artist": "Justine Skye & Tyga",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/Collide (Sped Up Remix).mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b273b1fd209c11e33b3902159ab2",
+
+},
+{
+"title": "KEHLANI",
+"artist": "Jordan Adetunji",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/KEHLANI.mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b273f2cd132495d61b0da6a900d2",
+
+},
+{
+"title": "Rich Baby Daddy (feat. Sexyy Red & SZA)",
+"artist": "Drake & Sexyy Red & SZA",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/Rich Baby Daddy (feat. Sexyy Red & SZA).mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b27340f770ccc233a33f66cc553a",
+
+},
+{
+"title": "Swim",
+"artist": "Chase Atlantic",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/Swim.mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b2735a0c2870f4f309e382d1fad6",
+
+},
+{
+"title": "HEAVEN AND BACK",
+"artist": "Chase Atlantic",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/HEAVEN AND BACK.mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b2736df037d6182ee54b85c4fbbb",
+
+},
+{
+"title": "Glock In My Lap",
+"artist": "21 Savage & Metro Boomin",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/Glock In My Lap.mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b273aa57907bf0cb2ca0c8cc74bc",
+
+},
+{
+"title": "Too Many Nights (feat. Don Toliver & with Future)",
+"artist": "Metro Boomin & Future & Don Toliver",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/Too Many Nights (feat. Don Toliver & with Future).mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b27313e54d6687e65678d60466c2",
+
+},
+{
+"title": "FE!N",
+"artist": "Travis Scott",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/FE!N.mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b273881d8d8378cd01099babcd44",
+
+},
+{
+"title": "U Are My High (with Future)",
+"artist": "DJ Snake & Future",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/U Are My High (with Future).mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b2730e35fb1dd1d8c8bf82086e0e",
+
+},
+{
+"title": "Reflections",
+"artist": "The Neighbourhood",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/Reflections.mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b2739b6ac98a52f62d5cb473da40",
+
+},
+{
+"title": "Practice",
+"artist": "Drake",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/Practice.mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b273c7ea04a9b455e3f68ef82550",
+
+},
+{
+"title": "Saturn",
+"artist": "SZA",
+"url": "https://raw.githubusercontent.com/SatzzDev/Datas/cool/songs/Saturn.mp3",
+"image":"https://i.scdn.co/image/ab67616d0000b273d70916ee9e40c90380ba5f07",
+
+}
+],
+audioFile: ""
+},
+mounted: function() {
+this.changeSong();
+this.audio.loop = false;
+},
+filters: {
+fancyTimeFormat: function(s) {
+return (s - (s %= 60)) / 60 + (9 < s ? ":" : ":0") + s;
+}
+},
+methods: {
+togglePlaylist: function() {
+this.isPlaylistActive = !this.isPlaylistActive;
+},
+nextSong: function() {
+if (this.currentSong < this.musicPlaylist.length - 1)
+this.changeSong(this.currentSong + 1);
+},
+prevSong: function() {
+if (this.currentSong > 0) this.changeSong(this.currentSong - 1);
+},
+changeSong: function(index) {
+var wasPlaying = this.currentlyPlaying;
+this.imageLoaded = false;
+if (index !== undefined) {
+this.stopAudio();
+this.currentSong = index;
+}
+this.audioFile = this.musicPlaylist[this.currentSong].url;
+this.audio = new Audio(this.audioFile);
+var localThis = this;
+this.audio.addEventListener("loadedmetadata", function() {
+localThis.trackDuration = Math.round(this.duration);
+});
+this.audio.addEventListener("ended", this.handleEnded);
+if (wasPlaying) {
+this.playAudio();
+}
+},
+isCurrentSong: function(index) {
+if (this.currentSong == index) {
+return true;
+}
+return false;
+},
+getCurrentSong: function(currentSong) {
+return this.musicPlaylist[currentSong].url;
+},
+playAudio: function() {
+if (
+this.currentlyStopped == true &&
+this.currentSong + 1 == this.musicPlaylist.length
+) {
+this.currentSong = 0;
+this.changeSong();
+}
+if (!this.currentlyPlaying) {
+this.getCurrentTimeEverySecond(true);
+this.currentlyPlaying = true;
+this.audio.play();
+} else {
+this.stopAudio();
+}
+this.currentlyStopped = false;
+},
+stopAudio: function() {
+this.audio.pause();
+this.currentlyPlaying = false;
+this.pausedMusic();
+},
+handleEnded: function() {
+if (this.currentSong + 1 == this.musicPlaylist.length) {
+this.stopAudio();
+this.currentlyPlaying = false;
+this.currentlyStopped = true;
+} else {
+this.currentlyPlaying = false;
+this.currentSong++;
+this.changeSong();
+this.playAudio();
+}
+},
+onImageLoaded: function() {
+this.imgLoaded = true;
+},
+getCurrentTimeEverySecond: function(startStop) {
+var localThis = this;
+this.checkingCurrentPositionInTrack = setTimeout(
+function() {
+localThis.currentTime = localThis.audio.currentTime;
+localThis.currentProgressBar =
+localThis.audio.currentTime / localThis.trackDuration * 100;
+localThis.getCurrentTimeEverySecond(true);
+}.bind(this),
+1000
+);
+},
+pausedMusic: function() {
+clearTimeout(this.checkingCurrentPositionInTrack);
+},
+toggleDebug: function(){
+this.debug=!this.debug;
+document.body.classList.toggle('debug');
+}
+},
+watch: {
+currentTime: function() {
+this.currentTime = Math.round(this.currentTime);
+}
+},
+beforeDestroy: function() {
+this.audio.removeEventListener("ended", this.handleEnded);
+this.audio.removeEventListener("loadedmetadata", this.handleEnded);
+
+clearTimeout(this.checkingCurrentPositionInTrack);
+}
+});
+</script>
+</body>
+</html>
