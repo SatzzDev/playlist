@@ -1,5 +1,7 @@
 @charset "UTF-8";
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   padding: 0;
   margin: 0;
   box-sizing: border-box;
@@ -7,7 +9,7 @@
 
 body {
   font-size: 28px;
-  background-color: #26282B;
+  background-color: #26282b;
 }
 
 .btn {
@@ -17,8 +19,8 @@ body {
   outline: none;
   border-radius: 50px;
   background-color: #050606;
-  background-image: linear-gradient(120deg, #47494B 0%, #18191D 100%);
-  color: #84878A;
+  background-image: linear-gradient(120deg, #47494b 0%, #18191d 100%);
+  color: #84878a;
   text-align: center;
   border-style: solid;
   border-color: #2f3139;
@@ -28,9 +30,9 @@ body {
 }
 .btn::before {
   -webkit-user-select: none;
-     -moz-user-select: none;
-      -ms-user-select: none;
-          user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
@@ -43,8 +45,10 @@ body {
   line-height: 1;
   box-shadow: -3px -3px 20px #5b5b5b, 5px 5px 20px #050606;
 }
-.btn--big:active, .btn--big.active {
-  box-shadow: inset 10px 10px 20px rgba(209, 19, 2, 0.5), -3px -3px 20px #5b5b5b, 5px 5px 20px #050606;
+.btn--big:active,
+.btn--big.active {
+  box-shadow: inset 10px 10px 20px rgba(209, 19, 2, 0.5), -3px -3px 20px #5b5b5b,
+    5px 5px 20px #050606;
 }
 .btn--small {
   box-shadow: -3px -3px 15px #6a6a6a, 3px 3px 15px #050606;
@@ -54,8 +58,10 @@ body {
   border-width: 2px;
   line-height: 1;
 }
-.btn--small:active, .btn--small.active {
-  box-shadow: inset 10px 10px 20px rgba(209, 19, 2, 0.5), -3px -3px 15px #6a6a6a, 3px 3px 15px #050606;
+.btn--small:active,
+.btn--small.active {
+  box-shadow: inset 10px 10px 20px rgba(209, 19, 2, 0.5), -3px -3px 15px #6a6a6a,
+    3px 3px 15px #050606;
 }
 .btn--xs {
   box-shadow: -3px -3px 15px #6a6a6a, 3px 3px 15px #050606;
@@ -65,12 +71,15 @@ body {
   border-width: 2px;
   line-height: 1;
 }
-.btn--xs:active, .btn--xs.active {
-  box-shadow: inset 10px 10px 20px rgba(209, 19, 2, 0.5), -3px -3px 15px #6a6a6a, 3px 3px 15px #050606;
+.btn--xs:active,
+.btn--xs.active {
+  box-shadow: inset 10px 10px 20px rgba(209, 19, 2, 0.5), -3px -3px 15px #6a6a6a,
+    3px 3px 15px #050606;
 }
-.btn:active, .btn.active {
-  border-color: #E8550C;
-  background-image: linear-gradient(120deg, #E8550C 0%, #f47333 100%);
+.btn:active,
+.btn.active {
+  border-color: #e8550c;
+  background-image: linear-gradient(120deg, #e8550c 0%, #f47333 100%);
   color: #fff;
 }
 .btn.play::before {
@@ -78,10 +87,11 @@ body {
   left: 50%;
 }
 .btn.play.pause {
-  border-color: #E8550C;
-  background-image: linear-gradient(120deg, #E8550C 0%, #f47333 100%);
+  border-color: #e8550c;
+  background-image: linear-gradient(120deg, #e8550c 0%, #f47333 100%);
   color: #fff;
-  box-shadow: inset 10px 10px 20px rgba(209, 19, 2, 0.5), -3px -3px 20px #5b5b5b, 5px 5px 20px #050606;
+  box-shadow: inset 10px 10px 20px rgba(209, 19, 2, 0.5), -3px -3px 20px #5b5b5b,
+    5px 5px 20px #050606;
 }
 .btn.play.pause::before {
   content: "";
@@ -100,10 +110,11 @@ body {
   left: 50%;
 }
 .btn.playlist.isactive {
-  border-color: #E8550C;
-  background-image: linear-gradient(120deg, #E8550C 0%, #f47333 100%);
+  border-color: #e8550c;
+  background-image: linear-gradient(120deg, #e8550c 0%, #f47333 100%);
   color: #fff;
-  box-shadow: inset 10px 10px 20px rgba(209, 19, 2, 0.5), -3px -3px 20px #5b5b5b, 5px 5px 20px #050606;
+  box-shadow: inset 10px 10px 20px rgba(209, 19, 2, 0.5), -3px -3px 20px #5b5b5b,
+    5px 5px 20px #050606;
 }
 .btn.playlist.isactive::before {
   content: "";
@@ -134,16 +145,16 @@ body {
 .app {
   overflow: hidden;
   position: relative;
-  max-width: 400px;
-  min-height: 875px;
+  max-width: 390px;
+  min-height: 600px;
   margin: 20px auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-image: linear-gradient(#343A3F 0%, #232528 100%);
+  background-image: linear-gradient(#343a3f 0%, #232528 100%);
   border: 1px solid #393b3c;
   border-radius: 50px;
-  box-shadow: 5px 5px 35px #18191D;
+  box-shadow: 5px 5px 35px #18191d;
 }
 .app__head {
   justify-content: space-between;
@@ -175,10 +186,10 @@ body {
 }
 .album__img {
   overflow: hidden;
-  height: 300px;
-  width: 300px;
+  height: 250px;
+  width: 250px;
   transition: all 0.25s ease;
-  border: 10px solid #18191D;
+  border: 10px solid #18191d;
   border-radius: 100%;
   transform-origin: top center;
   box-shadow: -5px -5px 25px #444444, 5px 5px 25px #050606;
@@ -193,20 +204,21 @@ body {
 .album__info {
   margin-top: 50px;
   text-align: center;
-  color: #A7A8AA;
+  color: #a7a8aa;
   opacity: 1;
   transition: opacity 0.25s ease;
 }
 .album__info.isactive {
   opacity: 0;
 }
+
 .album__info-name {
-  font-size: 36px;
+  font-size: 30px;
   padding-bottom: 10px;
 }
 .album__info-track {
   padding-top: 5px;
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .progress {
@@ -250,7 +262,7 @@ body {
 .progress__bar-current {
   transition: all 0.25s ease;
   position: absolute;
-  background-image: linear-gradient(45deg, #D11302 0%, #f9ca24 100%);
+  background-image: linear-gradient(45deg, #d11302 0%, #f9ca24 100%);
   height: calc(100% - 2px);
   width: 0%;
   z-index: 3;
@@ -269,8 +281,9 @@ body {
   top: 50%;
   transform: translateY(-50%);
   z-index: 10;
-  background-image: linear-gradient(120deg, #47494B 0%, #18191D 100%);
-  box-shadow: -5px -5px 15px #444444, 3px 3px 15px #050606, inset -3px -3px 5px #18191D;
+  background-image: linear-gradient(120deg, #47494b 0%, #18191d 100%);
+  box-shadow: -5px -5px 15px #444444, 3px 3px 15px #050606,
+    inset -3px -3px 5px #18191d;
 }
 .progress__bar-pin::after {
   content: "";
@@ -282,7 +295,8 @@ body {
   height: 35%;
   width: 35%;
   background-color: #f9ca24;
-  box-shadow: -5px -5px 12px #18191D, 5px 5px 12px #6a6a6a, inset 2px 2px 5px #777777;
+  box-shadow: -5px -5px 12px #18191d, 5px 5px 12px #6a6a6a,
+    inset 2px 2px 5px #777777;
 }
 
 .tracks {
@@ -302,7 +316,7 @@ body {
 .tracks.isactive {
   z-index: 10;
   -webkit-animation: bounce 0.5s ease forwards alternate;
-          animation: bounce 0.5s ease forwards alternate;
+  animation: bounce 0.5s ease forwards alternate;
 }
 .tracks__list {
   padding-top: 20px;
@@ -314,7 +328,7 @@ body {
   padding-bottom: 20px;
 }
 .tracks__item {
-  color: #A7A8AA;
+  color: #a7a8aa;
   width: calc(100% - 20px);
   display: flex;
   justify-content: space-between;
@@ -326,7 +340,7 @@ body {
 }
 .tracks__item.isactive {
   background-color: #1a1b20;
-  border-bottom: 1px solid #18191D;
+  border-bottom: 1px solid #18191d;
   border-top: 1px solid #373737;
   border-right: 1px solid #373737;
   box-shadow: inset 0 -25px 25px #24252b;
