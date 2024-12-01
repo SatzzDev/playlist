@@ -1,552 +1,657 @@
 <!DOCTYPE html>
-<html lang="en" >
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Satzz Mode Galau</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
-<link rel='stylesheet' href='https://use.fontawesome.com/releases/v5.0.7/css/all.css'><link rel="stylesheet" href="../style.css">
-<link rel="shortcut icon" href="../favicon.png" />
-</head>
-<body>
-<!-- partial:index.partial.html -->
-<div class="app" id="app">
-<div class="tracks" :class="{isactive: isPlaylistActive}">
-<ul class="tracks__list">
-<li class="tracks__item" v-for="(item,index) in musicPlaylist" :class="{isactive: isCurrentSong(index)}">
-<div class="tracks__info">
-<h3 class="tracks__info-artist">{{item.artist}}</h3><span class="tracks__info-name">{{ item.title }}</span>
-</div>
-<button class="btn play btn--xs" @click="changeSong(index)" :class="{pause: isCurrentSong(index)}"></button>
-</li>
-</ul>
-</div>
-<div class="row app__head">
-<button class="btn btn--small back"></button>
-<button class="btn btn--small playlist" @click="togglePlaylist" :class="{isactive: isPlaylistActive}"></button>
-</div>
-<div class="row app__body">
-<div class="album">
-<div class="album__img" @load="onImageLoaded" :style="{ backgroundImage: `url(${musicPlaylist[currentSong].image})` }" :class="{isactive: isPlaylistActive}" :key="currentSong" ondragstart="return false"></div>
-<div class="album__info" :class="{isactive: isPlaylistActive}">
-<h3 class="album__info-name" :key="currentSong">{{ musicPlaylist[currentSong].title }}</h3>
-<p class="album__info-track" :key="currentSong">{{ musicPlaylist[currentSong].artist }}</p>
-</div>
-</div>
-<div class="progress" ref="progress" :class="{isactive: isPlaylistActive}">
-<div class="progress__count"><span>{{ currentTime | fancyTimeFormat }}</span><span>{{ trackDuration | fancyTimeFormat }}</span></div>
-<div class="progress__bar">
-<div class="progress__bar-current" :style="{ width: currentProgressBar + '%' }"></div>
-<div class="progress__bar-pin" :style="{ left: currentProgressBar + '%' }"></div>
-</div>
-</div>
-</div>
-<div class="row app__footer" :class="{isactive: isPlaylistActive}">
-<button class="btn prev btn--big" @click="prevSong"></button>
-<button class="btn play btn--big" @click="playAudio" :class="{pause: currentlyPlaying}"></button>
-<button class="btn next btn--big" @click="nextSong"></button>
-</div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.js"></script>
-<script>
-new Vue({
-el: "#app",
-data: {
-audio: "",
-imgLoaded: false,
-currentlyPlaying: false,
-currentlyStopped: false,
-currentTime: 0,
-checkingCurrentPositionInTrack: "",
-trackDuration: 0,
-currentProgressBar: 0,
-isPlaylistActive: false,
-currentSong: 0,
-debug: false,
-musicPlaylist: [
-{
-"title": "All I Want",
-"artist": "Olivia Rodrigo & Disney",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/All I Want.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273103b7e52b6a1b74035385876",
-"favorite": true
-},
-{
-"title": "traitor",
-"artist": "Olivia Rodrigo",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/traitor.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273a91c10fe9472d9bd89802e5a",
-"favorite": true
-},
-{
-"title": "Memories",
-"artist": "Conan Gray",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Memories.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b27360a89b781c62ffe2136e4396",
-"favorite": true
-},
-{
-"title": "happier",
-"artist": "Olivia Rodrigo",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/happier.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273a91c10fe9472d9bd89802e5a",
-"favorite": true
-},
-{
-"title": "I Don't Love You",
-"artist": "My Chemical Romance",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/I Don't Love You.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b27317f77fab7e8f18d5f9fee4a1",
-"favorite": true
-},
-{
-"title": "Angels Like You",
-"artist": "Miley Cyrus",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Angels Like You.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b2738cffb7c6c40759eaf8a5a142",
-"favorite": true
-},
-{
-"title": "Disenchanted",
-"artist": "My Chemical Romance",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Disenchanted.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b27317f77fab7e8f18d5f9fee4a1",
-"favorite": true
-},
-{
-"title": "Cancer",
-"artist": "My Chemical Romance",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Cancer.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b27317f77fab7e8f18d5f9fee4a1",
-"favorite": true
-},
-{
-"title": "Die With A Smile",
-"artist": "Lady Gaga & Bruno Mars",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Die With A Smile.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b2735c7afa72c84ca04fdb7a5a4c",
-"favorite": true
-},
-{
-"title": "Iris",
-"artist": "The Goo Goo Dolls",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Iris.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273eda9478c39a21e1cdc6609ca",
-"favorite": true
-},
-{
-"title": "Car's Outside",
-"artist": "James Arthur",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Car's Outside.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273dc16d839ab77c64bdbeb3660",
-"favorite": true
-},
-{
-"title": "A Year Ago",
-"artist": "James Arthur",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/A Year Ago.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273b7bc00a22e8cf49d45a3b8b2",
-"favorite": true
-},
-{
-"title": "The Cut That Always Bleeds",
-"artist": "Conan Gray",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/The Cut That Always Bleeds.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b27388e3cda6d29b2552d4d6bc43",
-"favorite": true
-},
-{
-"title": "A Thousand Years",
-"artist": "James Arthur",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/A Thousand Years.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b27341b58c028c3ed6035074bdc1",
-"favorite": true
-},
-{
-"title": "Can I Be Him",
-"artist": "James Arthur",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Can I Be Him.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b27320beb61f61fcbeb33b10a9ab",
-"favorite": true
-},
-{
-"title": "Say You Won't Let Go",
-"artist": "James Arthur",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Say You Won't Let Go.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b27320beb61f61fcbeb33b10a9ab",
-"favorite": true
-},
-{
-"title": "Train Wreck",
-"artist": "James Arthur",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Train Wreck.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b27320beb61f61fcbeb33b10a9ab",
-"favorite": true
-},
-{
-"title": "Impossible",
-"artist": "James Arthur",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Impossible.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273192221f838b7b6b9cb4629bf",
-"favorite": true
-},
-{
-"title": "Rewrite The Stars (with James Arthur & Anne-Marie)",
-"artist": "James Arthur & Anne-Marie",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Rewrite The Stars (with James Arthur & Anne-Marie).mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273fdcd66dc526a25e1555ae81d",
-"favorite": true
-},
-{
-"title": "Daylight",
-"artist": "David Kushner",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Daylight.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b27395ca6a9b4083a86c149934ae",
-"favorite": true
-},
-{
-"title": "Daylight",
-"artist": "Maroon 5",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Daylight.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273fc8633e22a7dba6aab817bff",
-"favorite": true
-},
-{
-"title": "Wide Awake",
-"artist": "Katy Perry",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Wide Awake.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273937af329667311f4b2831616",
-"favorite": true
-},
-{
-"title": "End of Beginning",
-"artist": "Djo",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/End of Beginning.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273fddfffec51b4580acae727c1",
-"favorite": true
-},
-{
-"title": "Secret Love Song (feat. Jason Derulo)",
-"artist": "Little Mix & Jason Derulo",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Secret Love Song (feat. Jason Derulo).mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273995994477ea1ae8097978bf8",
-"favorite": true
-},
-{
-"title": "Photograph",
-"artist": "Ed Sheeran",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Photograph.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b27313b3e37318a0c247b550bccd",
-"favorite": true
-},
-{
-"title": "505",
-"artist": "Arctic Monkeys",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/505.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273b1f8da74f225fa1225cdface",
-"favorite": true
-},
-{
-"title": "Unconditionally",
-"artist": "Katy Perry",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Unconditionally.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b2731e9a057052d59004caf47e22",
-"favorite": true
-},
-{
-"title": "Love In The Dark",
-"artist": "Adele",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Love In The Dark.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b2737b9888dc365b8f957c63df14",
-"favorite": true
-},
-{
-"title": "December",
-"artist": "Neck Deep",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/December.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b27382a3560435840c14a72f6b6e",
-"favorite": true
-},
-{
-"title": "7 Years",
-"artist": "Lukas Graham",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/7 Years.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b2732d94d0f04e9a58d1654b760b",
-"favorite": true
-},
-{
-"title": "Another Love",
-"artist": "Tom Odell",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Another Love.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b2731917a0f3f4152622a040913f",
-"favorite": true
-},
-{
-"title": "drunk text",
-"artist": "Henry Moodie",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/drunk text.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273db94c82db2d786cd9e03a538",
-"favorite": true
-},
-{
-"title": "Be Alright",
-"artist": "Dean Lewis",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Be Alright.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b27313480e8127119dcb882eb53d",
-"favorite": true
-},
-{
-"title": "In The Stars",
-"artist": "Benson Boone",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/In The Stars.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273918342010a40c88f289b5c00",
-"favorite": true
-},
-{
-"title": "Heart Attack",
-"artist": "Demi Lovato",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Heart Attack.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273aadb13ae608f6af20528409b",
-"favorite": true
-},
-{
-"title": "It's You",
-"artist": "Ali Gatie",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/It's You.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b27350a744f0ef5c3e260d9de720",
-"favorite": true
-},
-{
-"title": "Viva La Vida",
-"artist": "Coldplay",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Viva La Vida.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273e21cc1db05580b6f2d2a3b6e",
-"favorite": true
-},
-{
-"title": "Patience",
-"artist": "Take That",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Patience.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b27306e7629fa095158d50b73d57",
-"favorite": true
-},
-{
-"title": "Beauty And A Beat",
-"artist": "Justin Bieber & Nicki Minaj",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Beauty And A Beat.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273f1d02a6cec967f8b6b78f76e",
-"favorite": true
-},
-{
-"title": "Summertime Sadness",
-"artist": "Lana Del Rey",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Summertime Sadness.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273ebc8cfac8b586bc475b04918",
-"favorite": true
-},
-{
-"title": "Reckless",
-"artist": "Madison Beer",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Reckless.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273fe32f37b07c7894097aafd52",
-"favorite": true
-},
-{
-"title": "Let Her Go",
-"artist": "Passenger",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Let Her Go.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273eb0b18cce8b7f5c9fc1579e7",
-"favorite": true
-},
-{
-"title": "It Will Rain",
-"artist": "Bruno Mars",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/It Will Rain.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273dec2e6bae5062b94fc4eeb84",
-"favorite": true
-},
-{
-"title": "When I Was Your Man",
-"artist": "Bruno Mars",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/When I Was Your Man.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273926f43e7cce571e62720fd46",
-"favorite": true
-},
-{
-"title": "Locked out of Heaven",
-"artist": "Bruno Mars",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Locked out of Heaven.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273926f43e7cce571e62720fd46",
-"favorite": true
-},
-{
-"title": "Hurts So Good",
-"artist": "Astrid S",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Hurts So Good.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b27331e760ae51990e7d9a32593a",
-"favorite": true
-},
-{
-"title": "Happiness",
-"artist": "Rex Orange County",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Happiness.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b2731bd6d088d3d81972af4cb81d",
-"favorite": true
-},
-{
-"title": "Christmas Kids",
-"artist": "Roar",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Christmas Kids.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273d72f734a66c2b545facd7517",
-"favorite": true
-},
-{
-"title": "Mind Over Matter (Reprise)",
-"artist": "Young the Giant",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Mind Over Matter (Reprise).mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b2731f66d9c6790a9a1a2418ec57",
-"favorite": true
-},
-{
-"title": "Tek It",
-"artist": "Cafuné",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Tek It.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b27376a3f63eed99d8f4b99f931f",
-"favorite": true
-},
-{
-"title": "What Was I Made For? - From The Motion Picture \"Barbie\"",
-"artist": "Billie Eilish",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/What Was I Made For? - From The Motion Picture \"Barbie\".mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b2733e0217383d05ece6d051b51e",
-"favorite": true
-},
-{
-"title": "Closed Doors",
-"artist": "Ismail",
-"url": "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Closed Doors.mp3",
-"image": "https://i.scdn.co/image/ab67616d0000b273f8e06dc960c431820aa894b8",
-"favorite": true
-}
-],
-audioFile: ""
-},
-mounted: function() {
-this.changeSong();
-this.audio.loop = false;
-},
-filters: {
-fancyTimeFormat: function(s) {
-return (s - (s %= 60)) / 60 + (9 < s ? ":" : ":0") + s;
-}
-},
-methods: {
-togglePlaylist: function() {
-this.isPlaylistActive = !this.isPlaylistActive;
-},
-nextSong: function() {
-if (this.currentSong < this.musicPlaylist.length - 1)
-this.changeSong(this.currentSong + 1);
-},
-prevSong: function() {
-if (this.currentSong > 0) this.changeSong(this.currentSong - 1);
-},
-changeSong: function(index) {
-var wasPlaying = this.currentlyPlaying;
-this.imageLoaded = false;
-if (index !== undefined) {
-this.stopAudio();
-this.currentSong = index;
-}
-this.audioFile = this.musicPlaylist[this.currentSong].url;
-this.audio = new Audio(this.audioFile);
-var localThis = this;
-this.audio.addEventListener("loadedmetadata", function() {
-localThis.trackDuration = Math.round(this.duration);
-});
-this.audio.addEventListener("ended", this.handleEnded);
-if (wasPlaying) {
-this.playAudio();
-}
-},
-isCurrentSong: function(index) {
-if (this.currentSong == index) {
-return true;
-}
-return false;
-},
-getCurrentSong: function(currentSong) {
-return this.musicPlaylist[currentSong].url;
-},
-playAudio: function() {
-if (
-this.currentlyStopped == true &&
-this.currentSong + 1 == this.musicPlaylist.length
-) {
-this.currentSong = 0;
-this.changeSong();
-}
-if (!this.currentlyPlaying) {
-this.getCurrentTimeEverySecond(true);
-this.currentlyPlaying = true;
-this.audio.play();
-} else {
-this.stopAudio();
-}
-this.currentlyStopped = false;
-},
-stopAudio: function() {
-this.audio.pause();
-this.currentlyPlaying = false;
-this.pausedMusic();
-},
-handleEnded: function() {
-if (this.currentSong + 1 == this.musicPlaylist.length) {
-this.stopAudio();
-this.currentlyPlaying = false;
-this.currentlyStopped = true;
-} else {
-this.currentlyPlaying = false;
-this.currentSong++;
-this.changeSong();
-this.playAudio();
-}
-},
-onImageLoaded: function() {
-this.imgLoaded = true;
-},
-getCurrentTimeEverySecond: function(startStop) {
-var localThis = this;
-this.checkingCurrentPositionInTrack = setTimeout(
-function() {
-localThis.currentTime = localThis.audio.currentTime;
-localThis.currentProgressBar =
-localThis.audio.currentTime / localThis.trackDuration * 100;
-localThis.getCurrentTimeEverySecond(true);
-}.bind(this),
-1000
-);
-},
-pausedMusic: function() {
-clearTimeout(this.checkingCurrentPositionInTrack);
-},
-toggleDebug: function(){
-this.debug=!this.debug;
-document.body.classList.toggle('debug');
-}
-},
-watch: {
-currentTime: function() {
-this.currentTime = Math.round(this.currentTime);
-}
-},
-beforeDestroy: function() {
-this.audio.removeEventListener("ended", this.handleEnded);
-this.audio.removeEventListener("loadedmetadata", this.handleEnded);
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Satzz Mode Galau</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://use.fontawesome.com/releases/v5.0.7/css/all.css"
+    />
+    <link rel="stylesheet" href="../style.css" />
+    <link rel="shortcut icon" href="../favicon.png" />
+  </head>
+  <body>
+    <!-- partial:index.partial.html -->
+    <div class="app" id="app">
+      <div class="tracks" :class="{isactive: isPlaylistActive}">
+        <ul class="tracks__list">
+          <li
+            class="tracks__item"
+            v-for="(item,index) in musicPlaylist"
+            :class="{isactive: isCurrentSong(index)}"
+          >
+            <div class="tracks__info">
+              <h3 class="tracks__info-artist">{{item.artist}}</h3>
+              <span class="tracks__info-name">{{ item.title }}</span>
+            </div>
+            <button
+              class="btn play btn--xs"
+              @click="changeSong(index)"
+              :class="{pause: isCurrentSong(index)}"
+            ></button>
+          </li>
+        </ul>
+      </div>
+      <div class="row app__head">
+        <button
+          class="btn btn--small playlist"
+          @click="togglePlaylist"
+          :class="{isactive: isPlaylistActive}"
+        ></button>
+        <button
+          onclick="window.location.href='https://instagram.com/krniwnstria'"
+          class="btn btn--small"
+        >
+          <i class="fab fa-instagram"></i>
+        </button>
+      </div>
+      <div class="row app__body">
+        <div class="album">
+          <div
+            class="album__img"
+            @load="onImageLoaded"
+            :style="{ backgroundImage: `url(${musicPlaylist[currentSong].image})` }"
+            :class="{isactive: isPlaylistActive}"
+            :key="currentSong"
+            ondragstart="return false"
+          ></div>
+          <div class="album__info" :class="{isactive: isPlaylistActive}">
+            <h3 class="album__info-name" :key="currentSong">
+              {{ musicPlaylist[currentSong].title }}
+            </h3>
+            <p class="album__info-track" :key="currentSong">
+              {{ musicPlaylist[currentSong].artist }}
+            </p>
+          </div>
+        </div>
+        <div
+          class="progress"
+          ref="progress"
+          :class="{isactive: isPlaylistActive}"
+        >
+          <div class="progress__count">
+            <span>{{ currentTime | fancyTimeFormat }}</span
+            ><span>{{ trackDuration | fancyTimeFormat }}</span>
+          </div>
+          <div class="progress__bar">
+            <div
+              class="progress__bar-current"
+              :style="{ width: currentProgressBar + '%' }"
+            ></div>
+            <div
+              class="progress__bar-pin"
+              :style="{ left: currentProgressBar + '%' }"
+            ></div>
+          </div>
+        </div>
+      </div>
+      <div class="row app__footer" :class="{isactive: isPlaylistActive}">
+        <button class="btn prev btn--big" @click="prevSong"></button>
+        <button
+          class="btn play btn--big"
+          @click="playAudio"
+          :class="{pause: currentlyPlaying}"
+        ></button>
+        <button class="btn next btn--big" @click="nextSong"></button>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.js"></script>
+    <script>
+      new Vue({
+        el: "#app",
+        data: {
+          audio: "",
+          imgLoaded: false,
+          currentlyPlaying: false,
+          currentlyStopped: false,
+          currentTime: 0,
+          checkingCurrentPositionInTrack: "",
+          trackDuration: 0,
+          currentProgressBar: 0,
+          isPlaylistActive: false,
+          currentSong: 0,
+          debug: false,
+          musicPlaylist: [
+            {
+              title: "All I Want",
+              artist: "Olivia Rodrigo & Disney",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/All I Want.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273103b7e52b6a1b74035385876",
+              favorite: true,
+            },
+            {
+              title: "traitor",
+              artist: "Olivia Rodrigo",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/traitor.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273a91c10fe9472d9bd89802e5a",
+              favorite: true,
+            },
+            {
+              title: "Memories",
+              artist: "Conan Gray",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Memories.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27360a89b781c62ffe2136e4396",
+              favorite: true,
+            },
+            {
+              title: "happier",
+              artist: "Olivia Rodrigo",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/happier.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273a91c10fe9472d9bd89802e5a",
+              favorite: true,
+            },
+            {
+              title: "I Don't Love You",
+              artist: "My Chemical Romance",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/I Don't Love You.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27317f77fab7e8f18d5f9fee4a1",
+              favorite: true,
+            },
+            {
+              title: "Angels Like You",
+              artist: "Miley Cyrus",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Angels Like You.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2738cffb7c6c40759eaf8a5a142",
+              favorite: true,
+            },
+            {
+              title: "Disenchanted",
+              artist: "My Chemical Romance",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Disenchanted.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27317f77fab7e8f18d5f9fee4a1",
+              favorite: true,
+            },
+            {
+              title: "Cancer",
+              artist: "My Chemical Romance",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Cancer.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27317f77fab7e8f18d5f9fee4a1",
+              favorite: true,
+            },
+            {
+              title: "Die With A Smile",
+              artist: "Lady Gaga & Bruno Mars",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Die With A Smile.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2735c7afa72c84ca04fdb7a5a4c",
+              favorite: true,
+            },
+            {
+              title: "Iris",
+              artist: "The Goo Goo Dolls",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Iris.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273eda9478c39a21e1cdc6609ca",
+              favorite: true,
+            },
+            {
+              title: "Car's Outside",
+              artist: "James Arthur",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Car's Outside.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273dc16d839ab77c64bdbeb3660",
+              favorite: true,
+            },
+            {
+              title: "A Year Ago",
+              artist: "James Arthur",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/A Year Ago.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273b7bc00a22e8cf49d45a3b8b2",
+              favorite: true,
+            },
+            {
+              title: "The Cut That Always Bleeds",
+              artist: "Conan Gray",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/The Cut That Always Bleeds.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27388e3cda6d29b2552d4d6bc43",
+              favorite: true,
+            },
+            {
+              title: "A Thousand Years",
+              artist: "James Arthur",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/A Thousand Years.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27341b58c028c3ed6035074bdc1",
+              favorite: true,
+            },
+            {
+              title: "Can I Be Him",
+              artist: "James Arthur",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Can I Be Him.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27320beb61f61fcbeb33b10a9ab",
+              favorite: true,
+            },
+            {
+              title: "Say You Won't Let Go",
+              artist: "James Arthur",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Say You Won't Let Go.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27320beb61f61fcbeb33b10a9ab",
+              favorite: true,
+            },
+            {
+              title: "Train Wreck",
+              artist: "James Arthur",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Train Wreck.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27320beb61f61fcbeb33b10a9ab",
+              favorite: true,
+            },
+            {
+              title: "Impossible",
+              artist: "James Arthur",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Impossible.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273192221f838b7b6b9cb4629bf",
+              favorite: true,
+            },
+            {
+              title: "Rewrite The Stars (with James Arthur & Anne-Marie)",
+              artist: "James Arthur & Anne-Marie",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Rewrite The Stars (with James Arthur & Anne-Marie).mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273fdcd66dc526a25e1555ae81d",
+              favorite: true,
+            },
+            {
+              title: "Daylight",
+              artist: "David Kushner",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Daylight.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27395ca6a9b4083a86c149934ae",
+              favorite: true,
+            },
+            {
+              title: "Daylight",
+              artist: "Maroon 5",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Daylight.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273fc8633e22a7dba6aab817bff",
+              favorite: true,
+            },
+            {
+              title: "Wide Awake",
+              artist: "Katy Perry",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Wide Awake.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273937af329667311f4b2831616",
+              favorite: true,
+            },
+            {
+              title: "End of Beginning",
+              artist: "Djo",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/End of Beginning.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273fddfffec51b4580acae727c1",
+              favorite: true,
+            },
+            {
+              title: "Secret Love Song (feat. Jason Derulo)",
+              artist: "Little Mix & Jason Derulo",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Secret Love Song (feat. Jason Derulo).mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273995994477ea1ae8097978bf8",
+              favorite: true,
+            },
+            {
+              title: "Photograph",
+              artist: "Ed Sheeran",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Photograph.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27313b3e37318a0c247b550bccd",
+              favorite: true,
+            },
+            {
+              title: "505",
+              artist: "Arctic Monkeys",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/505.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273b1f8da74f225fa1225cdface",
+              favorite: true,
+            },
+            {
+              title: "Unconditionally",
+              artist: "Katy Perry",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Unconditionally.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2731e9a057052d59004caf47e22",
+              favorite: true,
+            },
+            {
+              title: "Love In The Dark",
+              artist: "Adele",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Love In The Dark.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2737b9888dc365b8f957c63df14",
+              favorite: true,
+            },
+            {
+              title: "December",
+              artist: "Neck Deep",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/December.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27382a3560435840c14a72f6b6e",
+              favorite: true,
+            },
+            {
+              title: "7 Years",
+              artist: "Lukas Graham",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/7 Years.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2732d94d0f04e9a58d1654b760b",
+              favorite: true,
+            },
+            {
+              title: "Another Love",
+              artist: "Tom Odell",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Another Love.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2731917a0f3f4152622a040913f",
+              favorite: true,
+            },
+            {
+              title: "drunk text",
+              artist: "Henry Moodie",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/drunk text.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273db94c82db2d786cd9e03a538",
+              favorite: true,
+            },
+            {
+              title: "Be Alright",
+              artist: "Dean Lewis",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Be Alright.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27313480e8127119dcb882eb53d",
+              favorite: true,
+            },
+            {
+              title: "In The Stars",
+              artist: "Benson Boone",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/In The Stars.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273918342010a40c88f289b5c00",
+              favorite: true,
+            },
+            {
+              title: "Heart Attack",
+              artist: "Demi Lovato",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Heart Attack.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273aadb13ae608f6af20528409b",
+              favorite: true,
+            },
+            {
+              title: "It's You",
+              artist: "Ali Gatie",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/It's You.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27350a744f0ef5c3e260d9de720",
+              favorite: true,
+            },
+            {
+              title: "Viva La Vida",
+              artist: "Coldplay",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Viva La Vida.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273e21cc1db05580b6f2d2a3b6e",
+              favorite: true,
+            },
+            {
+              title: "Patience",
+              artist: "Take That",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Patience.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27306e7629fa095158d50b73d57",
+              favorite: true,
+            },
+            {
+              title: "Beauty And A Beat",
+              artist: "Justin Bieber & Nicki Minaj",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Beauty And A Beat.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273f1d02a6cec967f8b6b78f76e",
+              favorite: true,
+            },
+            {
+              title: "Summertime Sadness",
+              artist: "Lana Del Rey",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Summertime Sadness.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273ebc8cfac8b586bc475b04918",
+              favorite: true,
+            },
+            {
+              title: "Reckless",
+              artist: "Madison Beer",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Reckless.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273fe32f37b07c7894097aafd52",
+              favorite: true,
+            },
+            {
+              title: "Let Her Go",
+              artist: "Passenger",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Let Her Go.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273eb0b18cce8b7f5c9fc1579e7",
+              favorite: true,
+            },
+            {
+              title: "It Will Rain",
+              artist: "Bruno Mars",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/It Will Rain.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273dec2e6bae5062b94fc4eeb84",
+              favorite: true,
+            },
+            {
+              title: "When I Was Your Man",
+              artist: "Bruno Mars",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/When I Was Your Man.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273926f43e7cce571e62720fd46",
+              favorite: true,
+            },
+            {
+              title: "Locked out of Heaven",
+              artist: "Bruno Mars",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Locked out of Heaven.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273926f43e7cce571e62720fd46",
+              favorite: true,
+            },
+            {
+              title: "Hurts So Good",
+              artist: "Astrid S",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Hurts So Good.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27331e760ae51990e7d9a32593a",
+              favorite: true,
+            },
+            {
+              title: "Happiness",
+              artist: "Rex Orange County",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Happiness.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2731bd6d088d3d81972af4cb81d",
+              favorite: true,
+            },
+            {
+              title: "Christmas Kids",
+              artist: "Roar",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Christmas Kids.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273d72f734a66c2b545facd7517",
+              favorite: true,
+            },
+            {
+              title: "Mind Over Matter (Reprise)",
+              artist: "Young the Giant",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Mind Over Matter (Reprise).mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2731f66d9c6790a9a1a2418ec57",
+              favorite: true,
+            },
+            {
+              title: "Tek It",
+              artist: "Cafuné",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Tek It.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27376a3f63eed99d8f4b99f931f",
+              favorite: true,
+            },
+            {
+              title: "What Was I Made For?",
+              artist: "Billie Eilish",
+              url: 'https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/What Was I Made For? - From The Motion Picture "Barbie".mp3',
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2733e0217383d05ece6d051b51e",
+              favorite: true,
+            },
+            {
+              title: "Closed Doors",
+              artist: "Ismail",
+              url: "https://raw.githubusercontent.com/SatzzDev/Datas/galau/songs/Closed Doors.mp3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273f8e06dc960c431820aa894b8",
+              favorite: true,
+            },
+          ],
+          audioFile: "",
+        },
+        mounted: function () {
+          this.changeSong();
+          this.audio.loop = false;
+        },
+        filters: {
+          fancyTimeFormat: function (s) {
+            return (s - (s %= 60)) / 60 + (9 < s ? ":" : ":0") + s;
+          },
+        },
+        methods: {
+          togglePlaylist: function () {
+            this.isPlaylistActive = !this.isPlaylistActive;
+          },
+          nextSong: function () {
+            if (this.currentSong < this.musicPlaylist.length - 1)
+              this.changeSong(this.currentSong + 1);
+          },
+          prevSong: function () {
+            if (this.currentSong > 0) this.changeSong(this.currentSong - 1);
+          },
+          changeSong: function (index) {
+            var wasPlaying = this.currentlyPlaying;
+            this.imageLoaded = false;
+            if (index !== undefined) {
+              this.stopAudio();
+              this.currentSong = index;
+            }
+            this.audioFile = this.musicPlaylist[this.currentSong].url;
+            this.audio = new Audio(this.audioFile);
+            var localThis = this;
+            this.audio.addEventListener("loadedmetadata", function () {
+              localThis.trackDuration = Math.round(this.duration);
+            });
+            this.audio.addEventListener("ended", this.handleEnded);
+            if (wasPlaying) {
+              this.playAudio();
+            }
+          },
+          isCurrentSong: function (index) {
+            if (this.currentSong == index) {
+              return true;
+            }
+            return false;
+          },
+          getCurrentSong: function (currentSong) {
+            return this.musicPlaylist[currentSong].url;
+          },
+          playAudio: function () {
+            if (
+              this.currentlyStopped == true &&
+              this.currentSong + 1 == this.musicPlaylist.length
+            ) {
+              this.currentSong = 0;
+              this.changeSong();
+            }
+            if (!this.currentlyPlaying) {
+              this.getCurrentTimeEverySecond(true);
+              this.currentlyPlaying = true;
+              this.audio.play();
+            } else {
+              this.stopAudio();
+            }
+            this.currentlyStopped = false;
+          },
+          stopAudio: function () {
+            this.audio.pause();
+            this.currentlyPlaying = false;
+            this.pausedMusic();
+          },
+          handleEnded: function () {
+            if (this.currentSong + 1 == this.musicPlaylist.length) {
+              this.stopAudio();
+              this.currentlyPlaying = false;
+              this.currentlyStopped = true;
+            } else {
+              this.currentlyPlaying = false;
+              this.currentSong++;
+              this.changeSong();
+              this.playAudio();
+            }
+          },
+          onImageLoaded: function () {
+            this.imgLoaded = true;
+          },
+          getCurrentTimeEverySecond: function (startStop) {
+            var localThis = this;
+            this.checkingCurrentPositionInTrack = setTimeout(
+              function () {
+                localThis.currentTime = localThis.audio.currentTime;
+                localThis.currentProgressBar =
+                  (localThis.audio.currentTime / localThis.trackDuration) * 100;
+                localThis.getCurrentTimeEverySecond(true);
+              }.bind(this),
+              1000
+            );
+          },
+          pausedMusic: function () {
+            clearTimeout(this.checkingCurrentPositionInTrack);
+          },
+          toggleDebug: function () {
+            this.debug = !this.debug;
+            document.body.classList.toggle("debug");
+          },
+        },
+        watch: {
+          currentTime: function () {
+            this.currentTime = Math.round(this.currentTime);
+          },
+        },
+        beforeDestroy: function () {
+          this.audio.removeEventListener("ended", this.handleEnded);
+          this.audio.removeEventListener("loadedmetadata", this.handleEnded);
 
-clearTimeout(this.checkingCurrentPositionInTrack);
-}
-});
-</script>
-</body>
+          clearTimeout(this.checkingCurrentPositionInTrack);
+        },
+      });
+    </script>
+  </body>
 </html>

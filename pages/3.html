@@ -1,832 +1,979 @@
 <!DOCTYPE html>
-<html lang="en" >
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Satzz Mode Tidur</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
-<link rel='stylesheet' href='https://use.fontawesome.com/releases/v5.0.7/css/all.css'><link rel="stylesheet" href="../style.css">
-<link rel="shortcut icon" href="../favicon.png" />
-</head>
-<body>
-<!-- partial:index.partial.html -->
-<div class="app" id="app">
-<div class="tracks" :class="{isactive: isPlaylistActive}">
-<ul class="tracks__list">
-<li class="tracks__item" v-for="(item,index) in musicPlaylist" :class="{isactive: isCurrentSong(index)}">
-<div class="tracks__info">
-<h3 class="tracks__info-artist">{{item.artist}}</h3><span class="tracks__info-name">{{ item.title }}</span>
-</div>
-<button class="btn play btn--xs" @click="changeSong(index)" :class="{pause: isCurrentSong(index)}"></button>
-</li>
-</ul>
-</div>
-<div class="row app__head">
-<button class="btn btn--small back"></button>
-<button class="btn btn--small playlist" @click="togglePlaylist" :class="{isactive: isPlaylistActive}"></button>
-</div>
-<div class="row app__body">
-<div class="album">
-<div class="album__img" @load="onImageLoaded" :style="{ backgroundImage: `url(${musicPlaylist[currentSong].image})` }" :class="{isactive: isPlaylistActive}" :key="currentSong" ondragstart="return false"></div>
-<div class="album__info" :class="{isactive: isPlaylistActive}">
-<h3 class="album__info-name" :key="currentSong">{{ musicPlaylist[currentSong].title }}</h3>
-<p class="album__info-track" :key="currentSong">{{ musicPlaylist[currentSong].artist }}</p>
-</div>
-</div>
-<div class="progress" ref="progress" :class="{isactive: isPlaylistActive}">
-<div class="progress__count"><span>{{ currentTime | fancyTimeFormat }}</span><span>{{ trackDuration | fancyTimeFormat }}</span></div>
-<div class="progress__bar">
-<div class="progress__bar-current" :style="{ width: currentProgressBar + '%' }"></div>
-<div class="progress__bar-pin" :style="{ left: currentProgressBar + '%' }"></div>
-</div>
-</div>
-</div>
-<div class="row app__footer" :class="{isactive: isPlaylistActive}">
-<button class="btn prev btn--big" @click="prevSong"></button>
-<button class="btn play btn--big" @click="playAudio" :class="{pause: currentlyPlaying}"></button>
-<button class="btn next btn--big" @click="nextSong"></button>
-</div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.js"></script>
-<script>
-new Vue({
-el: "#app",
-data: {
-audio: "",
-imgLoaded: false,
-currentlyPlaying: false,
-currentlyStopped: false,
-currentTime: 0,
-checkingCurrentPositionInTrack: "",
-trackDuration: 0,
-currentProgressBar: 0,
-isPlaylistActive: false,
-currentSong: 0,
-debug: false,
-musicPlaylist: [
-    {
-      "index": 1,
-      "title": "18",
-      "artist": "One Direction",
-      "url": "https://api.fabdl.com/spotify/download-mp3/ab6e80fe053176a03d0151a2c9768a11",
-      "image": "https://i.scdn.co/image/ab67616d0000b273d304ba2d71de306812eebaf4"
-    },
-    {
-      "index": 2,
-      "title": "About You",
-      "artist": "The 1975",
-      "url": "https://api.fabdl.com/spotify/download-mp3/e6707b44984c40250e70b47322d7a64c",
-      "image": "https://i.scdn.co/image/ab67616d0000b2731f44db452a68e229650a302c"
-    },
-    {
-      "index": 3,
-      "title": "Akhir Tak Bahagia",
-      "artist": "Misellia",
-      "url": "https://api.fabdl.com/spotify/download-mp3/55dc2c4534fe3a93e20d8ae2a94946a1",
-      "image": "https://i.scdn.co/image/ab67616d0000b2731d8c87142038d9c62d74c19f"
-    },
-    {
-      "index": 4,
-      "title": "All I Want",
-      "artist": "Kodaline",
-      "url": "https://api.fabdl.com/spotify/download-mp3/a619060d98510656a8df7ff7fa62a3c4",
-      "image": "https://i.scdn.co/image/ab67616d0000b2733e42854096da9a3b1ca901c9"
-    },
-    {
-      "index": 5,
-      "title": "Always",
-      "artist": "Daniel Caesar",
-      "url": "https://api.fabdl.com/spotify/download-mp3/9f3f17773c5a7a6753776801e1b60bcf",
-      "image": "https://i.scdn.co/image/ab67616d0000b2737c68face1dc58127f3a7b1cc"
-    },
-    {
-      "index": 6,
-      "title": "An Art Gallery Could Never Be As Unique As You",
-      "artist": "mrld",
-      "url": "https://api.fabdl.com/spotify/download-mp3/86cc9052d76c40096e3469718cd87660",
-      "image": "https://i.scdn.co/image/ab67616d0000b27323f9a7469fb98e80e4ffdf42"
-    },
-    {
-      "index": 7,
-      "title": "Another Love",
-      "artist": "Tom Odell",
-      "url": "https://api.fabdl.com/spotify/download-mp3/f9ffd35f35382fa6641f45760762906f",
-      "image": "https://i.scdn.co/image/ab67616d0000b2731917a0f3f4152622a040913f"
-    },
-    {
-      "index": 8,
-      "title": "Apocalypse",
-      "artist": "Cigarettes After Sex",
-      "url": "https://api.fabdl.com/spotify/download-mp3/740386daa57d4c799021ba6952893b7e",
-      "image": "https://i.scdn.co/image/ab67616d0000b27394d280f0006107be47bb4fe7"
-    },
-    {
-      "index": 9,
-      "title": "Bercinta Lewat Kata - OST Jatuh Cinta Seperti di Film-Film",
-      "artist": "Donne Maula",
-      "url": "https://api.fabdl.com/spotify/download-mp3/28280e9877cd83e30182efd1ca8ef8a0",
-      "image": "https://i.scdn.co/image/ab67616d0000b2735d9740b9156bf12d23ba1bad"
-    },
-    {
-      "index": 10,
-      "title": "Bertaut",
-      "artist": "Nadin Amizah",
-      "url": "https://api.fabdl.com/spotify/download-mp3/ea2802f111d3ca95e6c2aa246cb5c465",
-      "image": "https://i.scdn.co/image/ab67616d0000b2732af8d850fa9388950b9320e7"
-    },
-    {
-      "index": 11,
-      "title": "Before You Go",
-      "artist": "Lewis Capaldi",
-      "url": "https://api.fabdl.com/spotify/download-mp3/09ac54da844bd764f7b3a65d3848ea07",
-      "image": "https://i.scdn.co/image/ab67616d0000b273f6cda6c81dd1c2d5783fbd2d"
-    },
-    {
-      "index": 12,
-      "title": "Best Part (feat. H.E.R.)",
-      "artist": "Daniel Caesar & H.E.R.",
-      "url": "https://api.fabdl.com/spotify/download-mp3/3ec252080501a685d2242f0baf433775",
-      "image": "https://i.scdn.co/image/ab67616d0000b2733138f891f3075c9c5d944037"
-    },
-    {
-      "index": 13,
-      "title": "beside you",
-      "artist": "keshi",
-      "url": "https://api.fabdl.com/spotify/download-mp3/ee1a33580133bf76177811be0683b4b3",
-      "image": "https://i.scdn.co/image/ab67616d0000b273da53f97b4b0f1e14d854f777"
-    },
-    {
-      "index": 14,
-      "title": "Blackbird - Remastered 2009",
-      "artist": "The Beatles",
-      "url": "https://api.fabdl.com/spotify/download-mp3/cf48c2f5d9b3657570b76370918dbf8d",
-      "image": "https://i.scdn.co/image/ab67616d0000b2734ce8b4e42588bf18182a1ad2"
-    },
-    {
-      "index": 15,
-      "title": "Blue Jeans",
-      "artist": "GANGGA",
-      "url": "https://api.fabdl.com/spotify/download-mp3/50bed1cc539b1ab01c40d8cc6b55f81a",
-      "image": "https://i.scdn.co/image/ab67616d0000b2733d80e6b294dcfe566a394072"
-    },
-    {
-      "index": 16,
-      "title": "Butterflies",
-      "artist": "Abe Parker",
-      "url": "https://api.fabdl.com/spotify/download-mp3/191265d801b9f0ae066a46dfb80157f6",
-      "image": "https://i.scdn.co/image/ab67616d0000b273ff29c9176dbd56a0c905f63a"
-    },
-    {
-      "index": 17,
-      "title": "Can I Be Him",
-      "artist": "James Arthur",
-      "url": "https://api.fabdl.com/spotify/download-mp3/7dd52461f4e0da56ddc748fda8b7bd5e",
-      "image": "https://i.scdn.co/image/ab67616d0000b27320beb61f61fcbeb33b10a9ab"
-    },
-    {
-      "index": 18,
-      "title": "Cry",
-      "artist": "Cigarettes After Sex",
-      "url": "https://api.fabdl.com/spotify/download-mp3/73e81b2c91de664a6fc9f2b0a6d99299",
-      "image": "https://i.scdn.co/image/ab67616d0000b273b0d93d82c831a2655e32762e"
-    },
-    {
-      "index": 19,
-      "title": "Dandelions",
-      "artist": "Ruth B.",
-      "url": "https://api.fabdl.com/spotify/download-mp3/83132cd89e4bf273e0ea0ebde16eddd4",
-      "image": "https://i.scdn.co/image/ab67616d0000b27397e971f3e53475091dc8d707"
-    },
-    {
-      "index": 20,
-      "title": "death bed (coffee for your head)",
-      "artist": "Powfu & beabadoobee",
-      "url": "https://api.fabdl.com/spotify/download-mp3/8bae7f94e71b966bbc77e1320c68442c",
-      "image": "https://i.scdn.co/image/ab67616d0000b273bf01fd0986a195d485922167"
-    },
-    {
-      "index": 21,
-      "title": "Denting",
-      "artist": "Petra Sihombing",
-      "url": "https://api.fabdl.com/spotify/download-mp3/c5cb8141bc7f5806ccd61aad2ad5e72a",
-      "image": "https://i.scdn.co/image/ab67616d0000b273a782cdba2783c146ccf37087"
-    },
-    {
-      "index": 22,
-      "title": "Di Akhir Perang",
-      "artist": "Nadin Amizah",
-      "url": "https://api.fabdl.com/spotify/download-mp3/ca7ec8aa4264128684f59eab69f2c116",
-      "image": "https://i.scdn.co/image/ab67616d0000b27394847679fe7b10e27d9803f5"
-    },
-    {
-      "index": 23,
-      "title": "double take",
-      "artist": "dhruv",
-      "url": "https://api.fabdl.com/spotify/download-mp3/412ae7498ebc1e78725177d8b8e243db",
-      "image": "https://i.scdn.co/image/ab67616d0000b2736f04e53cb5309f8e88286842"
-    },
-    {
-      "index": 24,
-      "title": "drivers license",
-      "artist": "Olivia Rodrigo",
-      "url": "https://api.fabdl.com/spotify/download-mp3/22330580af3a2a1a33d1562f60c5e70c",
-      "image": "https://i.scdn.co/image/ab67616d0000b273a91c10fe9472d9bd89802e5a"
-    },
-    {
-      "index": 25,
-      "title": "drunk text",
-      "artist": "Henry Moodie",
-      "url": "https://api.fabdl.com/spotify/download-mp3/0e26670ca008bf501b125a4b83a7265f",
-      "image": "https://i.scdn.co/image/ab67616d0000b273db94c82db2d786cd9e03a538"
-    },
-    {
-      "index": 26,
-      "title": "Enchanted",
-      "artist": "Taylor Swift",
-      "url": "https://api.fabdl.com/spotify/download-mp3/3302a0e2df463ca82a1ce2cc8c7cc720",
-      "image": "https://i.scdn.co/image/ab67616d0000b273e1bc852a04501952c765d5cd"
-    },
-    {
-      "index": 27,
-      "title": "eyes blue or brown, can't remember",
-      "artist": "untrusted & pretence & 11:11 Music Group",
-      "url": "https://api.fabdl.com/spotify/download-mp3/ba9c51f89f16a6c9599f667a3dfbed6b",
-      "image": "https://i.scdn.co/image/ab67616d0000b2738102b8b3461a3fa4b6f57cbb"
-    },
-    {
-      "index": 28,
-      "title": "Falling",
-      "artist": "Harry Styles",
-      "url": "https://api.fabdl.com/spotify/download-mp3/b71dda1a40aa7038a4843d9316895ce3",
-      "image": "https://i.scdn.co/image/ab67616d0000b27377fdcfda6535601aff081b6a"
-    },
-    {
-      "index": 29,
-      "title": "Falling In Love",
-      "artist": "Cigarettes After Sex",
-      "url": "https://api.fabdl.com/spotify/download-mp3/d6a3eb1354b8dccb88087334da22d619",
-      "image": "https://i.scdn.co/image/ab67616d0000b273b0d93d82c831a2655e32762e"
-    },
-    {
-      "index": 30,
-      "title": "favorite crime",
-      "artist": "Olivia Rodrigo",
-      "url": "https://api.fabdl.com/spotify/download-mp3/5bccfae57f9553e438575e49a0610b8e",
-      "image": "https://i.scdn.co/image/ab67616d0000b273a91c10fe9472d9bd89802e5a"
-    },
-    {
-      "index": 31,
-      "title": "Fix You",
-      "artist": "Coldplay",
-      "url": "https://api.fabdl.com/spotify/download-mp3/d365b22b04a52cfb935e1a2111bb3b34",
-      "image": "https://i.scdn.co/image/ab67616d0000b2734e0362c225863f6ae2432651"
-    },
-    {
-      "index": 32,
-      "title": "Get You (feat. Kali Uchis)",
-      "artist": "Daniel Caesar & Kali Uchis",
-      "url": "https://api.fabdl.com/spotify/download-mp3/4bf67db262571066713451761ddd65f7",
-      "image": "https://i.scdn.co/image/ab67616d0000b2733138f891f3075c9c5d944037"
-    },
-    {
-      "index": 33,
-      "title": "Give Me Your Forever",
-      "artist": "Zack Tabudlo",
-      "url": "https://api.fabdl.com/spotify/download-mp3/fa454a36f05358a2f57f4d086933337d",
-      "image": "https://i.scdn.co/image/ab67616d0000b2730acfd1cc37e7d4eacfa49c48"
-    },
-    {
-      "index": 34,
-      "title": "Halu",
-      "artist": "Feby Putri",
-      "url": "https://api.fabdl.com/spotify/download-mp3/9c14e1656a8cccbf94f32b08053fca5e",
-      "image": "https://i.scdn.co/image/ab67616d0000b273b43accd449468d819918efea"
-    },
-    {
-      "index": 35,
-      "title": "Happier",
-      "artist": "Ed Sheeran",
-      "url": "https://api.fabdl.com/spotify/download-mp3/1c65a561a822c8ca5631cd5ec037f307",
-      "image": "https://i.scdn.co/image/ab67616d0000b273ba5db46f4b838ef6027e6f96"
-    },
-    {
-      "index": 36,
-      "title": "Heather",
-      "artist": "Conan Gray",
-      "url": "https://api.fabdl.com/spotify/download-mp3/c92999b7c7c54d9f1be1a8d51c8f5b5c",
-      "image": "https://i.scdn.co/image/ab67616d0000b27388e3cda6d29b2552d4d6bc43"
-    },
-    {
-      "index": 37,
-      "title": "Here, There And Everywhere - Remastered 2009",
-      "artist": "The Beatles",
-      "url": "https://api.fabdl.com/spotify/download-mp3/51a04ae1254941dd3ce321ad5d8abd4d",
-      "image": "https://i.scdn.co/image/ab67616d0000b27328b8b9b46428896e6491e97a"
-    },
-    {
-      "index": 38,
-      "title": "Hold Me While You Wait",
-      "artist": "Lewis Capaldi",
-      "url": "https://api.fabdl.com/spotify/download-mp3/364295fb9955e453a542e4fbad2ecb40",
-      "image": "https://i.scdn.co/image/ab67616d0000b273fc2101e6889d6ce9025f85f2"
-    },
-    {
-      "index": 39,
-      "title": "if u could see me cryin' in my room",
-      "artist": "Arash Buana & raissa anggiani",
-      "url": "https://api.fabdl.com/spotify/download-mp3/328914afa2cae98a1d790948908c00f1",
-      "image": "https://i.scdn.co/image/ab67616d0000b2735f95e95fefcbafd47ffd6130"
-    },
-    {
-      "index": 40,
-      "title": "I Just Couldn't Save You Tonight - Story of Kale - Original Motion Picture Soundtrack",
-      "artist": "Ardhito Pramono & Aurélie",
-      "url": "https://api.fabdl.com/spotify/download-mp3/dd7d08dbed1b96a09afbfcbebb9dd1ac",
-      "image": "https://i.scdn.co/image/ab67616d0000b27379541996457d9d06cf9806e3"
-    },
-    {
-      "index": 41,
-      "title": "I Love You but I'm Letting Go",
-      "artist": "Pamungkas",
-      "url": "https://api.fabdl.com/spotify/download-mp3/7e7c012d664d8578ce34f3d5ea5e9f85",
-      "image": "https://i.scdn.co/image/ab67616d0000b27304d4b84c6eb6b24d61bbd963"
-    },
-    {
-      "index": 42,
-      "title": "Imagination",
-      "artist": "Shawn Mendes",
-      "url": "https://api.fabdl.com/spotify/download-mp3/f5035cce220fc4a62726821c1e73c4e6",
-      "image": "https://i.scdn.co/image/ab67616d0000b2732d6a4125a1d62dc6185f74ea"
-    },
-    {
-      "index": 43,
-      "title": "It's You",
-      "artist": "Ali Gatie",
-      "url": "https://api.fabdl.com/spotify/download-mp3/4ebae2434523d274eea84d51b2fa332a",
-      "image": "https://i.scdn.co/image/ab67616d0000b27350a744f0ef5c3e260d9de720"
-    },
-    {
-      "index": 44,
-      "title": "Jiwa Yang Bersedih",
-      "artist": "Ghea Indrawari",
-      "url": "https://api.fabdl.com/spotify/download-mp3/e197eb933a4e9153796a0e3c35f819e7",
-      "image": "https://i.scdn.co/image/ab67616d0000b273d5e19a9b55c764573748989d"
-    },
-    {
-      "index": 45,
-      "title": "Kau Rumahku",
-      "artist": "raissa anggiani",
-      "url": "https://api.fabdl.com/spotify/download-mp3/7d05cab869b88cca83afc15d58c201ed",
-      "image": "https://i.scdn.co/image/ab67616d0000b27332fa5c23a5c1cf200134e540"
-    },
-    {
-      "index": 46,
-      "title": "keepyousafe",
-      "artist": "Yahya",
-      "url": "https://api.fabdl.com/spotify/download-mp3/d4abf40bf2c74915a48f697645eef6be",
-      "image": "https://i.scdn.co/image/ab67616d0000b27302adfe7bba78c811482850d4"
-    },
-    {
-      "index": 47,
-      "title": "Kembali Pulang",
-      "artist": "Suara Kayu & Feby Putri",
-      "url": "https://api.fabdl.com/spotify/download-mp3/99607f1ee29763f287780adc194793bc",
-      "image": "https://i.scdn.co/image/ab67616d0000b273e017bc8f68c592494e68f3f4"
-    },
-    {
-      "index": 48,
-      "title": "Kill Bill",
-      "artist": "SZA",
-      "url": "https://api.fabdl.com/spotify/download-mp3/34fa8bd786a2cd6b3469844f6dc567f8",
-      "image": "https://i.scdn.co/image/ab67616d0000b27370dbc9f47669d120ad874ec1"
-    },
-    {
-      "index": 49,
-      "title": "Killing Me Softly With His Song",
-      "artist": "Fugees & Ms. Lauryn Hill",
-      "url": "https://api.fabdl.com/spotify/download-mp3/20e3fe76f84d8602c22e3559cf8dd1bc",
-      "image": "https://i.scdn.co/image/ab67616d0000b2735b7865be7f7fcc05faec6137"
-    },
-    {
-      "index": 50,
-      "title": "Komang",
-      "artist": "Raim Laode",
-      "url": "https://api.fabdl.com/spotify/download-mp3/e63a7d43dea078025628d4418f4ab582",
-      "image": "https://i.scdn.co/image/ab67616d0000b273f20ec6ba1f431a90dbf2e8b6"
-    },
-    {
-      "index": 51,
-      "title": "La La Lost You - Acoustic Version",
-      "artist": "NIKI & 88rising",
-      "url": "https://api.fabdl.com/spotify/download-mp3/1446d31af5cdccbece7c3aaf79f93af4",
-      "image": "https://i.scdn.co/image/ab67616d0000b2738b0e2044b4b20f24908f7122"
-    },
-    {
-      "index": 52,
-      "title": "LIMBO",
-      "artist": "keshi",
-      "url": "https://api.fabdl.com/spotify/download-mp3/891cac18b244bd46c06c86068d5df0a7",
-      "image": "https://i.scdn.co/image/ab67616d0000b27319aff2da63b211d75341e8eb"
-    },
-    {
-      "index": 53,
-      "title": "lovely (with Khalid)",
-      "artist": "Billie Eilish & Khalid",
-      "url": "https://api.fabdl.com/spotify/download-mp3/8a6f2232c3ca95d36d052beb6b5421af",
-      "image": "https://i.scdn.co/image/ab67616d0000b2738a3f0a3ca7929dea23cd274c"
-    },
-    {
-      "index": 54,
-      "title": "Love Someone",
-      "artist": "Lukas Graham",
-      "url": "https://api.fabdl.com/spotify/download-mp3/35b6b2e367263b639ee23cdc2194dd41",
-      "image": "https://i.scdn.co/image/ab67616d0000b27345100f4cdb2a88ecf80f270f"
-    },
-    {
-      "index": 55,
-      "title": "lowkey",
-      "artist": "NIKI",
-      "url": "https://api.fabdl.com/spotify/download-mp3/d7b63e592c76f73b804f6c76a6399bb1",
-      "image": "https://i.scdn.co/image/ab67616d0000b27327d27aa0719f69df2c50f4dd"
-    },
-    {
-      "index": 56,
-      "title": "Malibu Nights",
-      "artist": "LANY",
-      "url": "https://api.fabdl.com/spotify/download-mp3/4170fc3576f213bd27e6a902d0d9188e",
-      "image": "https://i.scdn.co/image/ab67616d0000b273c4dae9528b2a8408f463eb17"
-    },
-    {
-      "index": 57,
-      "title": "Melting",
-      "artist": "Kali Uchis",
-      "url": "https://api.fabdl.com/spotify/download-mp3/0aca9fee8b0d4e7ae540835eae592d92",
-      "image": "https://i.scdn.co/image/ab67616d0000b273dbc47f8bae404ce15ffd055e"
-    },
-    {
-      "index": 58,
-      "title": "Mesra-mesraannya kecil-kecilan dulu",
-      "artist": "Sal Priadi",
-      "url": "https://api.fabdl.com/spotify/download-mp3/e713e507f270437c145ccf6202d48c8a",
-      "image": "https://i.scdn.co/image/ab67616d0000b273680f1025f6619c42a3c23864"
-    },
-    {
-      "index": 59,
-      "title": "Muak",
-      "artist": "Aruma",
-      "url": "https://api.fabdl.com/spotify/download-mp3/bc435c3da8134ca4ce83b4e4d153b739",
-      "image": "https://i.scdn.co/image/ab67616d0000b27378dcf7c664ac1d53fd5a78db"
-    },
-    {
-      "index": 60,
-      "title": "Night Changes",
-      "artist": "One Direction",
-      "url": "https://api.fabdl.com/spotify/download-mp3/1760c82723973f880f116458fb4fe552",
-      "image": "https://i.scdn.co/image/ab67616d0000b273d304ba2d71de306812eebaf4"
-    },
-    {
-      "index": 61,
-      "title": "Nobody Gets Me",
-      "artist": "SZA",
-      "url": "https://api.fabdl.com/spotify/download-mp3/dc8ff187200f04230b18ec8053496c0d",
-      "image": "https://i.scdn.co/image/ab67616d0000b27370dbc9f47669d120ad874ec1"
-    },
-    {
-      "index": 62,
-      "title": "One Only",
-      "artist": "Pamungkas",
-      "url": "https://api.fabdl.com/spotify/download-mp3/e8627885edfb3e2b8e05d2e7f62d6b52",
-      "image": "https://i.scdn.co/image/ab67616d0000b27304d4b84c6eb6b24d61bbd963"
-    },
-    {
-      "index": 63,
-      "title": "P.S. I LOVE YOU",
-      "artist": "Paul Partohap",
-      "url": "https://api.fabdl.com/spotify/download-mp3/1dd0afd9f73a31e58be6274e2fcda843",
-      "image": "https://i.scdn.co/image/ab67616d0000b27303769726e96538c554af7c61"
-    },
-    {
-      "index": 64,
-      "title": "penjaga hati",
-      "artist": "Nadhif Basalamah",
-      "url": "https://api.fabdl.com/spotify/download-mp3/9c9c6bf5e9b51a2209a3ac68efa37a4d",
-      "image": "https://i.scdn.co/image/ab67616d0000b2735c60335b52110564cbe57176"
-    },
-    {
-      "index": 65,
-      "title": "perayaan mati rasa",
-      "artist": "Umay Shahab & Natania Karin",
-      "url": "https://api.fabdl.com/spotify/download-mp3/a6dc82c7f009111b58574b47bef0ff37",
-      "image": "https://i.scdn.co/image/ab67616d0000b2737bd45a97ae19bfec2197d3f8"
-    },
-    {
-      "index": 66,
-      "title": "Reckless",
-      "artist": "Madison Beer",
-      "url": "https://api.fabdl.com/spotify/download-mp3/f067c0438bb8eeaeeca9a549fddc443b",
-      "image": "https://i.scdn.co/image/ab67616d0000b273fe32f37b07c7894097aafd52"
-    },
-    {
-      "index": 67,
-      "title": "Resah Jadi Luka",
-      "artist": "Daun Jatuh",
-      "url": "https://api.fabdl.com/spotify/download-mp3/9faa9d67f4692bccd826bc515188135a",
-      "image": "https://i.scdn.co/image/ab67616d0000b27326458812554408283d9e2bd1"
-    },
-    {
-      "index": 68,
-      "title": "Runtuh",
-      "artist": "Feby Putri & Fiersa Besari",
-      "url": "https://api.fabdl.com/spotify/download-mp3/53a2e53b6824e751ac95a84fbf9473c6",
-      "image": "https://i.scdn.co/image/ab67616d0000b2734788f7886c01b9b2ee95cbdd"
-    },
-    {
-      "index": 69,
-      "title": "Scott Street",
-      "artist": "Phoebe Bridgers",
-      "url": "https://api.fabdl.com/spotify/download-mp3/9f1f9af6b11e10a4d053216307ae5fa5",
-      "image": "https://i.scdn.co/image/ab67616d0000b27368b90c3b34c3ac22856ddab8"
-    },
-    {
-      "index": 70,
-      "title": "Seandainya",
-      "artist": "Vierra",
-      "url": "https://api.fabdl.com/spotify/download-mp3/6115e9c50f259c87a0f83903b2786588",
-      "image": "https://i.scdn.co/image/ab67616d0000b27323e007677b3553867c54209b"
-    },
-    {
-      "index": 71,
-      "title": "Selamat (Selamat Tinggal)",
-      "artist": "Virgoun & Audy",
-      "url": "https://api.fabdl.com/spotify/download-mp3/425a08dd7ef4042eaf918c8fa9f379ec",
-      "image": "https://i.scdn.co/image/ab67616d0000b2739df93f68b7a2e0f8d4eafbab"
-    },
-    {
-      "index": 72,
-      "title": "Sempurna",
-      "artist": "Andra & The Backbone",
-      "url": "https://api.fabdl.com/spotify/download-mp3/68cf69c4579c35139867071c739d3d1c",
-      "image": "https://i.scdn.co/image/ab67616d0000b2738a25f55567169ee8dbc97fcc"
-    },
-    {
-      "index": 73,
-      "title": "Shallow",
-      "artist": "Lady Gaga & Bradley Cooper",
-      "url": "https://api.fabdl.com/spotify/download-mp3/34e25ac77821e4123a09b8dada521fe5",
-      "image": "https://i.scdn.co/image/ab67616d0000b273e2d156fdc691f57900134342"
-    },
-    {
-      "index": 74,
-      "title": "Shouldn't Be",
-      "artist": "Luke Chiang",
-      "url": "https://api.fabdl.com/spotify/download-mp3/1716b10639208e4147c3a1315f8716e5",
-      "image": "https://i.scdn.co/image/ab67616d0000b273326e886bd27805cae163eb84"
-    },
-    {
-      "index": 75,
-      "title": "Sleep Well",
-      "artist": "d4vd",
-      "url": "https://api.fabdl.com/spotify/download-mp3/874b5b3594e37f1d70e279c5434d83a0",
-      "image": "https://i.scdn.co/image/ab67616d0000b27364fa1bda999f4fbd2b7c4bb7"
-    },
-    {
-      "index": 76,
-      "title": "Slipping Through My Fingers",
-      "artist": "ABBA",
-      "url": "https://api.fabdl.com/spotify/download-mp3/f6ad33713b0195aab1f4e96dfc5d901d",
-      "image": "https://i.scdn.co/image/ab67616d0000b27342678f54dfd1d5afb3eea19a"
-    },
-    {
-      "index": 77,
-      "title": "Somebody's Pleasure",
-      "artist": "Aziz Hedra",
-      "url": "https://api.fabdl.com/spotify/download-mp3/d8b57671623166ae6487f6ad392ed7d3",
-      "image": "https://i.scdn.co/image/ab67616d0000b2730104b1f71c7bd8e6e5ea1fd2"
-    },
-    {
-      "index": 78,
-      "title": "Someone To Stay",
-      "artist": "Vancouver Sleep Clinic",
-      "url": "https://api.fabdl.com/spotify/download-mp3/21915521d634ff469348f7c087e25b02",
-      "image": "https://i.scdn.co/image/ab67616d0000b273dabc6fe9dd3454884cf65071"
-    },
-    {
-      "index": 79,
-      "title": "Someone You Loved",
-      "artist": "Lewis Capaldi",
-      "url": "https://api.fabdl.com/spotify/download-mp3/6ec58e90b6af70ed4664a479e4076be9",
-      "image": "https://i.scdn.co/image/ab67616d0000b273fc2101e6889d6ce9025f85f2"
-    },
-    {
-      "index": 80,
-      "title": "Sorai",
-      "artist": "Nadin Amizah",
-      "url": "https://api.fabdl.com/spotify/download-mp3/ff9667b76ef81e5b56272bcf127c2600",
-      "image": "https://i.scdn.co/image/ab67616d0000b2737d6b0a5ae92793f5d21be67a"
-    },
-    {
-      "index": 81,
-      "title": "—star.",
-      "artist": "Nadin Amizah",
-      "url": "https://api.fabdl.com/spotify/download-mp3/d05739761b399fec088a782e6844e32d",
-      "image": "https://i.scdn.co/image/ab67616d0000b2735715742be14d6771d1d037be"
-    },
-    {
-      "index": 82,
-      "title": "Garis Terdepan",
-      "artist": "Fiersa Besari",
-      "url": "https://api.fabdl.com/spotify/download-mp3/9c9911902553d127259b362bf1ef274c",
-      "image": "https://i.scdn.co/image/ab67616d0000b273592cba33b37ca21a08b770b5"
-    },
-    {
-      "index": 83,
-      "title": "I Love You 3000",
-      "artist": "Stephanie Poetri",
-      "url": "https://api.fabdl.com/spotify/download-mp3/66cc7d8e9877dc95d3a91ea6db5801c3",
-      "image": "https://i.scdn.co/image/ab67616d0000b273b32eb77a73837c10b0e98b99"
-    },
-    {
-      "index": 84,
-      "title": "i swear i'll never leave again",
-      "artist": "keshi",
-      "url": "https://api.fabdl.com/spotify/download-mp3/f7bd60d240bf85aab66e9e77854185bf",
-      "image": "https://i.scdn.co/image/ab67616d0000b27394237be74edae41560152bce"
-    },
-    {
-      "index": 85,
-      "title": "Kukira Kau Rumah",
-      "artist": "Amigdala",
-      "url": "https://api.fabdl.com/spotify/download-mp3/668a4945501814cd6a40c0e97d45627f",
-      "image": "https://i.scdn.co/image/ab67616d0000b273c2a6f96ecb2a8809d2ee0e87"
-    },
-    {
-      "index": 86,
-      "title": "Pelangi",
-      "artist": "Hivi!",
-      "url": "https://api.fabdl.com/spotify/download-mp3/1a381959d8e785b286b9a83eb09ee09b",
-      "image": "https://i.scdn.co/image/ab67616d0000b273abbee551b5c821d7624949ae"
-    },
-    {
-      "index": 87,
-      "title": "Rumpang",
-      "artist": "Nadin Amizah",
-      "url": "https://api.fabdl.com/spotify/download-mp3/b213eef65b8b260078164258c189e592",
-      "image": "https://i.scdn.co/image/ab67616d0000b273ce5a869b210cf3eaa91084dd"
-    },
-    {
-      "index": 88,
-      "title": "ANGEL",
-      "artist": "keshi",
-      "url": "https://api.fabdl.com/spotify/download-mp3/df26d76dfc47c356bdebb29d72b9ba07",
-      "image": "https://i.scdn.co/image/ab67616d0000b27319aff2da63b211d75341e8eb"
-    },
-    {
-      "index": 89,
-      "title": "I Still Love You",
-      "artist": "TheOvertunes",
-      "url": "https://api.fabdl.com/spotify/download-mp3/f5ffa7ba7f54e8d755c761871e998ef4",
-      "image": "https://i.scdn.co/image/ab67616d0000b273293c72b57fee242c8e451d2b"
-    },
-    {
-      "index": 90,
-      "title": "I'll Never Love Again - Film Version",
-      "artist": "Lady Gaga & Bradley Cooper",
-      "url": "https://api.fabdl.com/spotify/download-mp3/d5b4009aee83f7f4003db1ad062684c2",
-      "image": "https://i.scdn.co/image/ab67616d0000b273e2d156fdc691f57900134342"
-    },
-    {
-      "index": 91,
-      "title": "Mine",
-      "artist": "Petra Sihombing & Ben Sihombing",
-      "url": "https://api.fabdl.com/spotify/download-mp3/c026740f69c718660d5de1779306e415",
-      "image": "https://i.scdn.co/image/ab67616d0000b2731e03eb0d284feb4023480e8a"
-    },
-    {
-      "index": 92,
-      "title": "Sayap Pelindungmu",
-      "artist": "TheOvertunes",
-      "url": "https://api.fabdl.com/spotify/download-mp3/a87bc083c561aba5409f6ca5df628010",
-      "image": "https://i.scdn.co/image/ab67616d0000b273ad2d81b674462d99915c66a8"
-    }
-  ],
-audioFile: ""
-},
-mounted: function() {
-this.changeSong();
-this.audio.loop = false;
-},
-filters: {
-fancyTimeFormat: function(s) {
-return (s - (s %= 60)) / 60 + (9 < s ? ":" : ":0") + s;
-}
-},
-methods: {
-togglePlaylist: function() {
-this.isPlaylistActive = !this.isPlaylistActive;
-},
-nextSong: function() {
-if (this.currentSong < this.musicPlaylist.length - 1)
-this.changeSong(this.currentSong + 1);
-},
-prevSong: function() {
-if (this.currentSong > 0) this.changeSong(this.currentSong - 1);
-},
-changeSong: function(index) {
-var wasPlaying = this.currentlyPlaying;
-this.imageLoaded = false;
-if (index !== undefined) {
-this.stopAudio();
-this.currentSong = index;
-}
-this.audioFile = this.musicPlaylist[this.currentSong].url;
-this.audio = new Audio(this.audioFile);
-var localThis = this;
-this.audio.addEventListener("loadedmetadata", function() {
-localThis.trackDuration = Math.round(this.duration);
-});
-this.audio.addEventListener("ended", this.handleEnded);
-if (wasPlaying) {
-this.playAudio();
-}
-},
-isCurrentSong: function(index) {
-if (this.currentSong == index) {
-return true;
-}
-return false;
-},
-getCurrentSong: function(currentSong) {
-return this.musicPlaylist[currentSong].url;
-},
-playAudio: function() {
-if (
-this.currentlyStopped == true &&
-this.currentSong + 1 == this.musicPlaylist.length
-) {
-this.currentSong = 0;
-this.changeSong();
-}
-if (!this.currentlyPlaying) {
-this.getCurrentTimeEverySecond(true);
-this.currentlyPlaying = true;
-this.audio.play();
-} else {
-this.stopAudio();
-}
-this.currentlyStopped = false;
-},
-stopAudio: function() {
-this.audio.pause();
-this.currentlyPlaying = false;
-this.pausedMusic();
-},
-handleEnded: function() {
-if (this.currentSong + 1 == this.musicPlaylist.length) {
-this.stopAudio();
-this.currentlyPlaying = false;
-this.currentlyStopped = true;
-} else {
-this.currentlyPlaying = false;
-this.currentSong++;
-this.changeSong();
-this.playAudio();
-}
-},
-onImageLoaded: function() {
-this.imgLoaded = true;
-},
-getCurrentTimeEverySecond: function(startStop) {
-var localThis = this;
-this.checkingCurrentPositionInTrack = setTimeout(
-function() {
-localThis.currentTime = localThis.audio.currentTime;
-localThis.currentProgressBar =
-localThis.audio.currentTime / localThis.trackDuration * 100;
-localThis.getCurrentTimeEverySecond(true);
-}.bind(this),
-1000
-);
-},
-pausedMusic: function() {
-clearTimeout(this.checkingCurrentPositionInTrack);
-},
-toggleDebug: function(){
-this.debug=!this.debug;
-document.body.classList.toggle('debug');
-}
-},
-watch: {
-currentTime: function() {
-this.currentTime = Math.round(this.currentTime);
-}
-},
-beforeDestroy: function() {
-this.audio.removeEventListener("ended", this.handleEnded);
-this.audio.removeEventListener("loadedmetadata", this.handleEnded);
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Satzz Mode Tidur</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://use.fontawesome.com/releases/v5.0.7/css/all.css"
+    />
+    <link rel="stylesheet" href="../style.css" />
+    <link rel="shortcut icon" href="../favicon.png" />
+  </head>
+  <body>
+    <!-- partial:index.partial.html -->
+    <div class="app" id="app">
+      <div class="tracks" :class="{isactive: isPlaylistActive}">
+        <ul class="tracks__list">
+          <li
+            class="tracks__item"
+            v-for="(item,index) in musicPlaylist"
+            :class="{isactive: isCurrentSong(index)}"
+          >
+            <div class="tracks__info">
+              <h3 class="tracks__info-artist">{{item.title}}</h3>
+              <span class="tracks__info-name">{{ item.artist }}</span>
+            </div>
+            <button
+              class="btn play btn--xs"
+              @click="changeSong(index)"
+              :class="{pause: isCurrentSong(index)}"
+            ></button>
+          </li>
+        </ul>
+      </div>
+      <div class="row app__head">
+        <button
+          class="btn btn--small playlist"
+          @click="togglePlaylist"
+          :class="{isactive: isPlaylistActive}"
+        ></button>
+        <button
+          onclick="window.location.href='https://instagram.com/krniwnstria'"
+          class="btn btn--small"
+        >
+          <i class="fab fa-instagram"></i>
+        </button>
+      </div>
+      <div class="row app__body">
+        <div class="album">
+          <div
+            class="album__img"
+            @load="onImageLoaded"
+            :style="{ backgroundImage: `url(${musicPlaylist[currentSong].image})` }"
+            :class="{isactive: isPlaylistActive}"
+            :key="currentSong"
+            ondragstart="return false"
+          ></div>
+          <div class="album__info" :class="{isactive: isPlaylistActive}">
+            <h3 class="album__info-name" :key="currentSong">
+              {{ musicPlaylist[currentSong].title }}
+            </h3>
+            <p class="album__info-track" :key="currentSong">
+              {{ musicPlaylist[currentSong].artist }}
+            </p>
+          </div>
+        </div>
+        <div
+          class="progress"
+          ref="progress"
+          :class="{isactive: isPlaylistActive}"
+        >
+          <div class="progress__count">
+            <span>{{ currentTime | fancyTimeFormat }}</span
+            ><span>{{ trackDuration | fancyTimeFormat }}</span>
+          </div>
+          <div class="progress__bar">
+            <div
+              class="progress__bar-current"
+              :style="{ width: currentProgressBar + '%' }"
+            ></div>
+            <div
+              class="progress__bar-pin"
+              :style="{ left: currentProgressBar + '%' }"
+            ></div>
+          </div>
+        </div>
+      </div>
+      <div class="row app__footer" :class="{isactive: isPlaylistActive}">
+        <button class="btn prev btn--big" @click="prevSong"></button>
+        <button
+          class="btn play btn--big"
+          @click="playAudio"
+          :class="{pause: currentlyPlaying}"
+        ></button>
+        <button class="btn next btn--big" @click="nextSong"></button>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.js"></script>
+    <script>
+      new Vue({
+        el: "#app",
+        data: {
+          audio: "",
+          imgLoaded: false,
+          currentlyPlaying: false,
+          currentlyStopped: false,
+          currentTime: 0,
+          checkingCurrentPositionInTrack: "",
+          trackDuration: 0,
+          currentProgressBar: 0,
+          isPlaylistActive: false,
+          currentSong: 0,
+          debug: false,
+          musicPlaylist: [
+            {
+              index: 1,
+              title: "18",
+              artist: "One Direction",
+              url: "https://api.fabdl.com/spotify/download-mp3/ab6e80fe053176a03d0151a2c9768a11",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273d304ba2d71de306812eebaf4",
+            },
+            {
+              index: 2,
+              title: "About You",
+              artist: "The 1975",
+              url: "https://api.fabdl.com/spotify/download-mp3/e6707b44984c40250e70b47322d7a64c",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2731f44db452a68e229650a302c",
+            },
+            {
+              index: 3,
+              title: "Akhir Tak Bahagia",
+              artist: "Misellia",
+              url: "https://api.fabdl.com/spotify/download-mp3/55dc2c4534fe3a93e20d8ae2a94946a1",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2731d8c87142038d9c62d74c19f",
+            },
+            {
+              index: 4,
+              title: "All I Want",
+              artist: "Kodaline",
+              url: "https://api.fabdl.com/spotify/download-mp3/a619060d98510656a8df7ff7fa62a3c4",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2733e42854096da9a3b1ca901c9",
+            },
+            {
+              index: 5,
+              title: "Always",
+              artist: "Daniel Caesar",
+              url: "https://api.fabdl.com/spotify/download-mp3/9f3f17773c5a7a6753776801e1b60bcf",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2737c68face1dc58127f3a7b1cc",
+            },
+            {
+              index: 6,
+              title: "An Art Gallery Could Never Be As Unique As You",
+              artist: "mrld",
+              url: "https://api.fabdl.com/spotify/download-mp3/86cc9052d76c40096e3469718cd87660",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27323f9a7469fb98e80e4ffdf42",
+            },
+            {
+              index: 7,
+              title: "Another Love",
+              artist: "Tom Odell",
+              url: "https://api.fabdl.com/spotify/download-mp3/f9ffd35f35382fa6641f45760762906f",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2731917a0f3f4152622a040913f",
+            },
+            {
+              index: 8,
+              title: "Apocalypse",
+              artist: "Cigarettes After Sex",
+              url: "https://api.fabdl.com/spotify/download-mp3/740386daa57d4c799021ba6952893b7e",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27394d280f0006107be47bb4fe7",
+            },
+            {
+              index: 9,
+              title:
+                "Bercinta Lewat Kata - OST Jatuh Cinta Seperti di Film-Film",
+              artist: "Donne Maula",
+              url: "https://api.fabdl.com/spotify/download-mp3/28280e9877cd83e30182efd1ca8ef8a0",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2735d9740b9156bf12d23ba1bad",
+            },
+            {
+              index: 10,
+              title: "Bertaut",
+              artist: "Nadin Amizah",
+              url: "https://api.fabdl.com/spotify/download-mp3/ea2802f111d3ca95e6c2aa246cb5c465",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2732af8d850fa9388950b9320e7",
+            },
+            {
+              index: 11,
+              title: "Before You Go",
+              artist: "Lewis Capaldi",
+              url: "https://api.fabdl.com/spotify/download-mp3/09ac54da844bd764f7b3a65d3848ea07",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273f6cda6c81dd1c2d5783fbd2d",
+            },
+            {
+              index: 12,
+              title: "Best Part (feat. H.E.R.)",
+              artist: "Daniel Caesar & H.E.R.",
+              url: "https://api.fabdl.com/spotify/download-mp3/3ec252080501a685d2242f0baf433775",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2733138f891f3075c9c5d944037",
+            },
+            {
+              index: 13,
+              title: "beside you",
+              artist: "keshi",
+              url: "https://api.fabdl.com/spotify/download-mp3/ee1a33580133bf76177811be0683b4b3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273da53f97b4b0f1e14d854f777",
+            },
+            {
+              index: 14,
+              title: "Blackbird - Remastered 2009",
+              artist: "The Beatles",
+              url: "https://api.fabdl.com/spotify/download-mp3/cf48c2f5d9b3657570b76370918dbf8d",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2734ce8b4e42588bf18182a1ad2",
+            },
+            {
+              index: 15,
+              title: "Blue Jeans",
+              artist: "GANGGA",
+              url: "https://api.fabdl.com/spotify/download-mp3/50bed1cc539b1ab01c40d8cc6b55f81a",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2733d80e6b294dcfe566a394072",
+            },
+            {
+              index: 16,
+              title: "Butterflies",
+              artist: "Abe Parker",
+              url: "https://api.fabdl.com/spotify/download-mp3/191265d801b9f0ae066a46dfb80157f6",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273ff29c9176dbd56a0c905f63a",
+            },
+            {
+              index: 17,
+              title: "Can I Be Him",
+              artist: "James Arthur",
+              url: "https://api.fabdl.com/spotify/download-mp3/7dd52461f4e0da56ddc748fda8b7bd5e",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27320beb61f61fcbeb33b10a9ab",
+            },
+            {
+              index: 18,
+              title: "Cry",
+              artist: "Cigarettes After Sex",
+              url: "https://api.fabdl.com/spotify/download-mp3/73e81b2c91de664a6fc9f2b0a6d99299",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273b0d93d82c831a2655e32762e",
+            },
+            {
+              index: 19,
+              title: "Dandelions",
+              artist: "Ruth B.",
+              url: "https://api.fabdl.com/spotify/download-mp3/83132cd89e4bf273e0ea0ebde16eddd4",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27397e971f3e53475091dc8d707",
+            },
+            {
+              index: 20,
+              title: "death bed (coffee for your head)",
+              artist: "Powfu & beabadoobee",
+              url: "https://api.fabdl.com/spotify/download-mp3/8bae7f94e71b966bbc77e1320c68442c",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273bf01fd0986a195d485922167",
+            },
+            {
+              index: 21,
+              title: "Denting",
+              artist: "Petra Sihombing",
+              url: "https://api.fabdl.com/spotify/download-mp3/c5cb8141bc7f5806ccd61aad2ad5e72a",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273a782cdba2783c146ccf37087",
+            },
+            {
+              index: 22,
+              title: "Di Akhir Perang",
+              artist: "Nadin Amizah",
+              url: "https://api.fabdl.com/spotify/download-mp3/ca7ec8aa4264128684f59eab69f2c116",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27394847679fe7b10e27d9803f5",
+            },
+            {
+              index: 23,
+              title: "double take",
+              artist: "dhruv",
+              url: "https://api.fabdl.com/spotify/download-mp3/412ae7498ebc1e78725177d8b8e243db",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2736f04e53cb5309f8e88286842",
+            },
+            {
+              index: 24,
+              title: "drivers license",
+              artist: "Olivia Rodrigo",
+              url: "https://api.fabdl.com/spotify/download-mp3/22330580af3a2a1a33d1562f60c5e70c",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273a91c10fe9472d9bd89802e5a",
+            },
+            {
+              index: 25,
+              title: "drunk text",
+              artist: "Henry Moodie",
+              url: "https://api.fabdl.com/spotify/download-mp3/0e26670ca008bf501b125a4b83a7265f",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273db94c82db2d786cd9e03a538",
+            },
+            {
+              index: 26,
+              title: "Enchanted",
+              artist: "Taylor Swift",
+              url: "https://api.fabdl.com/spotify/download-mp3/3302a0e2df463ca82a1ce2cc8c7cc720",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273e1bc852a04501952c765d5cd",
+            },
+            {
+              index: 27,
+              title: "eyes blue or brown, can't remember",
+              artist: "untrusted & pretence & 11:11 Music Group",
+              url: "https://api.fabdl.com/spotify/download-mp3/ba9c51f89f16a6c9599f667a3dfbed6b",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2738102b8b3461a3fa4b6f57cbb",
+            },
+            {
+              index: 28,
+              title: "Falling",
+              artist: "Harry Styles",
+              url: "https://api.fabdl.com/spotify/download-mp3/b71dda1a40aa7038a4843d9316895ce3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27377fdcfda6535601aff081b6a",
+            },
+            {
+              index: 29,
+              title: "Falling In Love",
+              artist: "Cigarettes After Sex",
+              url: "https://api.fabdl.com/spotify/download-mp3/d6a3eb1354b8dccb88087334da22d619",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273b0d93d82c831a2655e32762e",
+            },
+            {
+              index: 30,
+              title: "favorite crime",
+              artist: "Olivia Rodrigo",
+              url: "https://api.fabdl.com/spotify/download-mp3/5bccfae57f9553e438575e49a0610b8e",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273a91c10fe9472d9bd89802e5a",
+            },
+            {
+              index: 31,
+              title: "Fix You",
+              artist: "Coldplay",
+              url: "https://api.fabdl.com/spotify/download-mp3/d365b22b04a52cfb935e1a2111bb3b34",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2734e0362c225863f6ae2432651",
+            },
+            {
+              index: 32,
+              title: "Get You (feat. Kali Uchis)",
+              artist: "Daniel Caesar & Kali Uchis",
+              url: "https://api.fabdl.com/spotify/download-mp3/4bf67db262571066713451761ddd65f7",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2733138f891f3075c9c5d944037",
+            },
+            {
+              index: 33,
+              title: "Give Me Your Forever",
+              artist: "Zack Tabudlo",
+              url: "https://api.fabdl.com/spotify/download-mp3/fa454a36f05358a2f57f4d086933337d",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2730acfd1cc37e7d4eacfa49c48",
+            },
+            {
+              index: 34,
+              title: "Halu",
+              artist: "Feby Putri",
+              url: "https://api.fabdl.com/spotify/download-mp3/9c14e1656a8cccbf94f32b08053fca5e",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273b43accd449468d819918efea",
+            },
+            {
+              index: 35,
+              title: "Happier",
+              artist: "Ed Sheeran",
+              url: "https://api.fabdl.com/spotify/download-mp3/1c65a561a822c8ca5631cd5ec037f307",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273ba5db46f4b838ef6027e6f96",
+            },
+            {
+              index: 36,
+              title: "Heather",
+              artist: "Conan Gray",
+              url: "https://api.fabdl.com/spotify/download-mp3/c92999b7c7c54d9f1be1a8d51c8f5b5c",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27388e3cda6d29b2552d4d6bc43",
+            },
+            {
+              index: 37,
+              title: "Here, There And Everywhere - Remastered 2009",
+              artist: "The Beatles",
+              url: "https://api.fabdl.com/spotify/download-mp3/51a04ae1254941dd3ce321ad5d8abd4d",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27328b8b9b46428896e6491e97a",
+            },
+            {
+              index: 38,
+              title: "Hold Me While You Wait",
+              artist: "Lewis Capaldi",
+              url: "https://api.fabdl.com/spotify/download-mp3/364295fb9955e453a542e4fbad2ecb40",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273fc2101e6889d6ce9025f85f2",
+            },
+            {
+              index: 39,
+              title: "if u could see me cryin' in my room",
+              artist: "Arash Buana & raissa anggiani",
+              url: "https://api.fabdl.com/spotify/download-mp3/328914afa2cae98a1d790948908c00f1",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2735f95e95fefcbafd47ffd6130",
+            },
+            {
+              index: 40,
+              title:
+                "I Just Couldn't Save You Tonight - Story of Kale - Original Motion Picture Soundtrack",
+              artist: "Ardhito Pramono & Aurélie",
+              url: "https://api.fabdl.com/spotify/download-mp3/dd7d08dbed1b96a09afbfcbebb9dd1ac",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27379541996457d9d06cf9806e3",
+            },
+            {
+              index: 41,
+              title: "I Love You but I'm Letting Go",
+              artist: "Pamungkas",
+              url: "https://api.fabdl.com/spotify/download-mp3/7e7c012d664d8578ce34f3d5ea5e9f85",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27304d4b84c6eb6b24d61bbd963",
+            },
+            {
+              index: 42,
+              title: "Imagination",
+              artist: "Shawn Mendes",
+              url: "https://api.fabdl.com/spotify/download-mp3/f5035cce220fc4a62726821c1e73c4e6",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2732d6a4125a1d62dc6185f74ea",
+            },
+            {
+              index: 43,
+              title: "It's You",
+              artist: "Ali Gatie",
+              url: "https://api.fabdl.com/spotify/download-mp3/4ebae2434523d274eea84d51b2fa332a",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27350a744f0ef5c3e260d9de720",
+            },
+            {
+              index: 44,
+              title: "Jiwa Yang Bersedih",
+              artist: "Ghea Indrawari",
+              url: "https://api.fabdl.com/spotify/download-mp3/e197eb933a4e9153796a0e3c35f819e7",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273d5e19a9b55c764573748989d",
+            },
+            {
+              index: 45,
+              title: "Kau Rumahku",
+              artist: "raissa anggiani",
+              url: "https://api.fabdl.com/spotify/download-mp3/7d05cab869b88cca83afc15d58c201ed",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27332fa5c23a5c1cf200134e540",
+            },
+            {
+              index: 46,
+              title: "keepyousafe",
+              artist: "Yahya",
+              url: "https://api.fabdl.com/spotify/download-mp3/d4abf40bf2c74915a48f697645eef6be",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27302adfe7bba78c811482850d4",
+            },
+            {
+              index: 47,
+              title: "Kembali Pulang",
+              artist: "Suara Kayu & Feby Putri",
+              url: "https://api.fabdl.com/spotify/download-mp3/99607f1ee29763f287780adc194793bc",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273e017bc8f68c592494e68f3f4",
+            },
+            {
+              index: 48,
+              title: "Kill Bill",
+              artist: "SZA",
+              url: "https://api.fabdl.com/spotify/download-mp3/34fa8bd786a2cd6b3469844f6dc567f8",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27370dbc9f47669d120ad874ec1",
+            },
+            {
+              index: 49,
+              title: "Killing Me Softly With His Song",
+              artist: "Fugees & Ms. Lauryn Hill",
+              url: "https://api.fabdl.com/spotify/download-mp3/20e3fe76f84d8602c22e3559cf8dd1bc",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2735b7865be7f7fcc05faec6137",
+            },
+            {
+              index: 50,
+              title: "Komang",
+              artist: "Raim Laode",
+              url: "https://api.fabdl.com/spotify/download-mp3/e63a7d43dea078025628d4418f4ab582",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273f20ec6ba1f431a90dbf2e8b6",
+            },
+            {
+              index: 51,
+              title: "La La Lost You - Acoustic Version",
+              artist: "NIKI & 88rising",
+              url: "https://api.fabdl.com/spotify/download-mp3/1446d31af5cdccbece7c3aaf79f93af4",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2738b0e2044b4b20f24908f7122",
+            },
+            {
+              index: 52,
+              title: "LIMBO",
+              artist: "keshi",
+              url: "https://api.fabdl.com/spotify/download-mp3/891cac18b244bd46c06c86068d5df0a7",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27319aff2da63b211d75341e8eb",
+            },
+            {
+              index: 53,
+              title: "lovely (with Khalid)",
+              artist: "Billie Eilish & Khalid",
+              url: "https://api.fabdl.com/spotify/download-mp3/8a6f2232c3ca95d36d052beb6b5421af",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2738a3f0a3ca7929dea23cd274c",
+            },
+            {
+              index: 54,
+              title: "Love Someone",
+              artist: "Lukas Graham",
+              url: "https://api.fabdl.com/spotify/download-mp3/35b6b2e367263b639ee23cdc2194dd41",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27345100f4cdb2a88ecf80f270f",
+            },
+            {
+              index: 55,
+              title: "lowkey",
+              artist: "NIKI",
+              url: "https://api.fabdl.com/spotify/download-mp3/d7b63e592c76f73b804f6c76a6399bb1",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27327d27aa0719f69df2c50f4dd",
+            },
+            {
+              index: 56,
+              title: "Malibu Nights",
+              artist: "LANY",
+              url: "https://api.fabdl.com/spotify/download-mp3/4170fc3576f213bd27e6a902d0d9188e",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273c4dae9528b2a8408f463eb17",
+            },
+            {
+              index: 57,
+              title: "Melting",
+              artist: "Kali Uchis",
+              url: "https://api.fabdl.com/spotify/download-mp3/0aca9fee8b0d4e7ae540835eae592d92",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273dbc47f8bae404ce15ffd055e",
+            },
+            {
+              index: 58,
+              title: "Mesra-mesraannya kecil-kecilan dulu",
+              artist: "Sal Priadi",
+              url: "https://api.fabdl.com/spotify/download-mp3/e713e507f270437c145ccf6202d48c8a",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273680f1025f6619c42a3c23864",
+            },
+            {
+              index: 59,
+              title: "Muak",
+              artist: "Aruma",
+              url: "https://api.fabdl.com/spotify/download-mp3/bc435c3da8134ca4ce83b4e4d153b739",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27378dcf7c664ac1d53fd5a78db",
+            },
+            {
+              index: 60,
+              title: "Night Changes",
+              artist: "One Direction",
+              url: "https://api.fabdl.com/spotify/download-mp3/1760c82723973f880f116458fb4fe552",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273d304ba2d71de306812eebaf4",
+            },
+            {
+              index: 61,
+              title: "Nobody Gets Me",
+              artist: "SZA",
+              url: "https://api.fabdl.com/spotify/download-mp3/dc8ff187200f04230b18ec8053496c0d",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27370dbc9f47669d120ad874ec1",
+            },
+            {
+              index: 62,
+              title: "One Only",
+              artist: "Pamungkas",
+              url: "https://api.fabdl.com/spotify/download-mp3/e8627885edfb3e2b8e05d2e7f62d6b52",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27304d4b84c6eb6b24d61bbd963",
+            },
+            {
+              index: 63,
+              title: "P.S. I LOVE YOU",
+              artist: "Paul Partohap",
+              url: "https://api.fabdl.com/spotify/download-mp3/1dd0afd9f73a31e58be6274e2fcda843",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27303769726e96538c554af7c61",
+            },
+            {
+              index: 64,
+              title: "penjaga hati",
+              artist: "Nadhif Basalamah",
+              url: "https://api.fabdl.com/spotify/download-mp3/9c9c6bf5e9b51a2209a3ac68efa37a4d",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2735c60335b52110564cbe57176",
+            },
+            {
+              index: 65,
+              title: "perayaan mati rasa",
+              artist: "Umay Shahab & Natania Karin",
+              url: "https://api.fabdl.com/spotify/download-mp3/a6dc82c7f009111b58574b47bef0ff37",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2737bd45a97ae19bfec2197d3f8",
+            },
+            {
+              index: 66,
+              title: "Reckless",
+              artist: "Madison Beer",
+              url: "https://api.fabdl.com/spotify/download-mp3/f067c0438bb8eeaeeca9a549fddc443b",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273fe32f37b07c7894097aafd52",
+            },
+            {
+              index: 67,
+              title: "Resah Jadi Luka",
+              artist: "Daun Jatuh",
+              url: "https://api.fabdl.com/spotify/download-mp3/9faa9d67f4692bccd826bc515188135a",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27326458812554408283d9e2bd1",
+            },
+            {
+              index: 68,
+              title: "Runtuh",
+              artist: "Feby Putri & Fiersa Besari",
+              url: "https://api.fabdl.com/spotify/download-mp3/53a2e53b6824e751ac95a84fbf9473c6",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2734788f7886c01b9b2ee95cbdd",
+            },
+            {
+              index: 69,
+              title: "Scott Street",
+              artist: "Phoebe Bridgers",
+              url: "https://api.fabdl.com/spotify/download-mp3/9f1f9af6b11e10a4d053216307ae5fa5",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27368b90c3b34c3ac22856ddab8",
+            },
+            {
+              index: 70,
+              title: "Seandainya",
+              artist: "Vierra",
+              url: "https://api.fabdl.com/spotify/download-mp3/6115e9c50f259c87a0f83903b2786588",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27323e007677b3553867c54209b",
+            },
+            {
+              index: 71,
+              title: "Selamat (Selamat Tinggal)",
+              artist: "Virgoun & Audy",
+              url: "https://api.fabdl.com/spotify/download-mp3/425a08dd7ef4042eaf918c8fa9f379ec",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2739df93f68b7a2e0f8d4eafbab",
+            },
+            {
+              index: 72,
+              title: "Sempurna",
+              artist: "Andra & The Backbone",
+              url: "https://api.fabdl.com/spotify/download-mp3/68cf69c4579c35139867071c739d3d1c",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2738a25f55567169ee8dbc97fcc",
+            },
+            {
+              index: 73,
+              title: "Shallow",
+              artist: "Lady Gaga & Bradley Cooper",
+              url: "https://api.fabdl.com/spotify/download-mp3/34e25ac77821e4123a09b8dada521fe5",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273e2d156fdc691f57900134342",
+            },
+            {
+              index: 74,
+              title: "Shouldn't Be",
+              artist: "Luke Chiang",
+              url: "https://api.fabdl.com/spotify/download-mp3/1716b10639208e4147c3a1315f8716e5",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273326e886bd27805cae163eb84",
+            },
+            {
+              index: 75,
+              title: "Sleep Well",
+              artist: "d4vd",
+              url: "https://api.fabdl.com/spotify/download-mp3/874b5b3594e37f1d70e279c5434d83a0",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27364fa1bda999f4fbd2b7c4bb7",
+            },
+            {
+              index: 76,
+              title: "Slipping Through My Fingers",
+              artist: "ABBA",
+              url: "https://api.fabdl.com/spotify/download-mp3/f6ad33713b0195aab1f4e96dfc5d901d",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27342678f54dfd1d5afb3eea19a",
+            },
+            {
+              index: 77,
+              title: "Somebody's Pleasure",
+              artist: "Aziz Hedra",
+              url: "https://api.fabdl.com/spotify/download-mp3/d8b57671623166ae6487f6ad392ed7d3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2730104b1f71c7bd8e6e5ea1fd2",
+            },
+            {
+              index: 78,
+              title: "Someone To Stay",
+              artist: "Vancouver Sleep Clinic",
+              url: "https://api.fabdl.com/spotify/download-mp3/21915521d634ff469348f7c087e25b02",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273dabc6fe9dd3454884cf65071",
+            },
+            {
+              index: 79,
+              title: "Someone You Loved",
+              artist: "Lewis Capaldi",
+              url: "https://api.fabdl.com/spotify/download-mp3/6ec58e90b6af70ed4664a479e4076be9",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273fc2101e6889d6ce9025f85f2",
+            },
+            {
+              index: 80,
+              title: "Sorai",
+              artist: "Nadin Amizah",
+              url: "https://api.fabdl.com/spotify/download-mp3/ff9667b76ef81e5b56272bcf127c2600",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2737d6b0a5ae92793f5d21be67a",
+            },
+            {
+              index: 81,
+              title: "—star.",
+              artist: "Nadin Amizah",
+              url: "https://api.fabdl.com/spotify/download-mp3/d05739761b399fec088a782e6844e32d",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2735715742be14d6771d1d037be",
+            },
+            {
+              index: 82,
+              title: "Garis Terdepan",
+              artist: "Fiersa Besari",
+              url: "https://api.fabdl.com/spotify/download-mp3/9c9911902553d127259b362bf1ef274c",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273592cba33b37ca21a08b770b5",
+            },
+            {
+              index: 83,
+              title: "I Love You 3000",
+              artist: "Stephanie Poetri",
+              url: "https://api.fabdl.com/spotify/download-mp3/66cc7d8e9877dc95d3a91ea6db5801c3",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273b32eb77a73837c10b0e98b99",
+            },
+            {
+              index: 84,
+              title: "i swear i'll never leave again",
+              artist: "keshi",
+              url: "https://api.fabdl.com/spotify/download-mp3/f7bd60d240bf85aab66e9e77854185bf",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27394237be74edae41560152bce",
+            },
+            {
+              index: 85,
+              title: "Kukira Kau Rumah",
+              artist: "Amigdala",
+              url: "https://api.fabdl.com/spotify/download-mp3/668a4945501814cd6a40c0e97d45627f",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273c2a6f96ecb2a8809d2ee0e87",
+            },
+            {
+              index: 86,
+              title: "Pelangi",
+              artist: "Hivi!",
+              url: "https://api.fabdl.com/spotify/download-mp3/1a381959d8e785b286b9a83eb09ee09b",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273abbee551b5c821d7624949ae",
+            },
+            {
+              index: 87,
+              title: "Rumpang",
+              artist: "Nadin Amizah",
+              url: "https://api.fabdl.com/spotify/download-mp3/b213eef65b8b260078164258c189e592",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273ce5a869b210cf3eaa91084dd",
+            },
+            {
+              index: 88,
+              title: "ANGEL",
+              artist: "keshi",
+              url: "https://api.fabdl.com/spotify/download-mp3/df26d76dfc47c356bdebb29d72b9ba07",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b27319aff2da63b211d75341e8eb",
+            },
+            {
+              index: 89,
+              title: "I Still Love You",
+              artist: "TheOvertunes",
+              url: "https://api.fabdl.com/spotify/download-mp3/f5ffa7ba7f54e8d755c761871e998ef4",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273293c72b57fee242c8e451d2b",
+            },
+            {
+              index: 90,
+              title: "I'll Never Love Again - Film Version",
+              artist: "Lady Gaga & Bradley Cooper",
+              url: "https://api.fabdl.com/spotify/download-mp3/d5b4009aee83f7f4003db1ad062684c2",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273e2d156fdc691f57900134342",
+            },
+            {
+              index: 91,
+              title: "Mine",
+              artist: "Petra Sihombing & Ben Sihombing",
+              url: "https://api.fabdl.com/spotify/download-mp3/c026740f69c718660d5de1779306e415",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b2731e03eb0d284feb4023480e8a",
+            },
+            {
+              index: 92,
+              title: "Sayap Pelindungmu",
+              artist: "TheOvertunes",
+              url: "https://api.fabdl.com/spotify/download-mp3/a87bc083c561aba5409f6ca5df628010",
+              image:
+                "https://i.scdn.co/image/ab67616d0000b273ad2d81b674462d99915c66a8",
+            },
+          ],
+          audioFile: "",
+        },
+        mounted: function () {
+          this.changeSong();
+          this.audio.loop = false;
+        },
+        filters: {
+          fancyTimeFormat: function (s) {
+            return (s - (s %= 60)) / 60 + (9 < s ? ":" : ":0") + s;
+          },
+        },
+        methods: {
+          togglePlaylist: function () {
+            this.isPlaylistActive = !this.isPlaylistActive;
+          },
+          nextSong: function () {
+            if (this.currentSong < this.musicPlaylist.length - 1)
+              this.changeSong(this.currentSong + 1);
+          },
+          prevSong: function () {
+            if (this.currentSong > 0) this.changeSong(this.currentSong - 1);
+          },
+          changeSong: function (index) {
+            var wasPlaying = this.currentlyPlaying;
+            this.imageLoaded = false;
+            if (index !== undefined) {
+              this.stopAudio();
+              this.currentSong = index;
+            }
+            this.audioFile = this.musicPlaylist[this.currentSong].url;
+            this.audio = new Audio(this.audioFile);
+            var localThis = this;
+            this.audio.addEventListener("loadedmetadata", function () {
+              localThis.trackDuration = Math.round(this.duration);
+            });
+            this.audio.addEventListener("ended", this.handleEnded);
+            if (wasPlaying) {
+              this.playAudio();
+            }
+          },
+          isCurrentSong: function (index) {
+            if (this.currentSong == index) {
+              return true;
+            }
+            return false;
+          },
+          getCurrentSong: function (currentSong) {
+            return this.musicPlaylist[currentSong].url;
+          },
+          playAudio: function () {
+            if (
+              this.currentlyStopped == true &&
+              this.currentSong + 1 == this.musicPlaylist.length
+            ) {
+              this.currentSong = 0;
+              this.changeSong();
+            }
+            if (!this.currentlyPlaying) {
+              this.getCurrentTimeEverySecond(true);
+              this.currentlyPlaying = true;
+              this.audio.play();
+            } else {
+              this.stopAudio();
+            }
+            this.currentlyStopped = false;
+          },
+          stopAudio: function () {
+            this.audio.pause();
+            this.currentlyPlaying = false;
+            this.pausedMusic();
+          },
+          handleEnded: function () {
+            if (this.currentSong + 1 == this.musicPlaylist.length) {
+              this.stopAudio();
+              this.currentlyPlaying = false;
+              this.currentlyStopped = true;
+            } else {
+              this.currentlyPlaying = false;
+              this.currentSong++;
+              this.changeSong();
+              this.playAudio();
+            }
+          },
+          onImageLoaded: function () {
+            this.imgLoaded = true;
+          },
+          getCurrentTimeEverySecond: function (startStop) {
+            var localThis = this;
+            this.checkingCurrentPositionInTrack = setTimeout(
+              function () {
+                localThis.currentTime = localThis.audio.currentTime;
+                localThis.currentProgressBar =
+                  (localThis.audio.currentTime / localThis.trackDuration) * 100;
+                localThis.getCurrentTimeEverySecond(true);
+              }.bind(this),
+              1000
+            );
+          },
+          pausedMusic: function () {
+            clearTimeout(this.checkingCurrentPositionInTrack);
+          },
+          toggleDebug: function () {
+            this.debug = !this.debug;
+            document.body.classList.toggle("debug");
+          },
+        },
+        watch: {
+          currentTime: function () {
+            this.currentTime = Math.round(this.currentTime);
+          },
+        },
+        beforeDestroy: function () {
+          this.audio.removeEventListener("ended", this.handleEnded);
+          this.audio.removeEventListener("loadedmetadata", this.handleEnded);
 
-clearTimeout(this.checkingCurrentPositionInTrack);
-}
-});
-</script>
-</body>
+          clearTimeout(this.checkingCurrentPositionInTrack);
+        },
+      });
+    </script>
+  </body>
 </html>
